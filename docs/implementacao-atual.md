@@ -50,3 +50,7 @@ A instalação local agora também exige a migração `drizzle/0001_blue_giant_m
 A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
 
 Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.
+
+## Placa do veículo de destino
+
+Ao planejar ou registrar a saída de uma peça, a placa do veículo de destino é obrigatória e selecionada entre os veículos cadastrados. O formulário destaca a placa e o modelo antes da confirmação. As consultas de uso previsto, peças recebidas e movimentações identificam explicitamente a placa de destino; o estoque mostra as placas com uso previsto pendente. As exportações CSV incluem a placa e, nas movimentações, o modelo do veículo em colunas separadas. A identificação histórica já registrada no banco é preservada.

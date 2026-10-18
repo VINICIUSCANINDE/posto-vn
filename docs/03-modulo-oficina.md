@@ -35,3 +35,7 @@ Na instalação local, aplicar a migração 0000 e depois a 0001, sem reaplicar 
 
 ## Validação
 Compilação e TypeScript aprovados. Foram aprovadas 27 verificações específicas da Oficina, incluindo saída acima do saldo, entrega parcial e completa, veículo incorreto, recebedor obrigatório, saídas simultâneas, reversão da operação recusada, quantidades fracionárias e permissões do operador sem acesso administrativo. Os 19 testes anteriores dos abastecimentos também passaram. Os registros fictícios foram removidos do banco local após os testes.
+
+## Placa do veículo de destino
+
+Ao planejar ou registrar a saída de uma peça, a placa do veículo de destino é obrigatória e selecionada entre os veículos cadastrados. O formulário destaca a placa e o modelo antes da confirmação. As consultas de uso previsto, peças recebidas e movimentações identificam explicitamente a placa de destino; o estoque mostra as placas com uso previsto pendente. As exportações CSV incluem a placa e, nas movimentações, o modelo do veículo em colunas separadas. A identificação histórica já registrada no banco é preservada.
