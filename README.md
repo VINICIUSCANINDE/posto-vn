@@ -49,3 +49,9 @@ O teste utiliza autenticação simulada local, cria registros fictícios, verifi
 - Publicar o código no GitHub não publica automaticamente a aplicação nem migra o banco.
 
 Prefira manter este repositório privado e conceder acesso somente aos desenvolvedores responsáveis.
+
+## Oficina
+
+Novo menu administrativo com estoque de peças, entradas e saídas, uso previsto por veículo e peças efetivamente entregues. A saída identifica quem recebeu e baixa o estoque de forma atômica. Consulte `docs/03-modulo-oficina.md` para as regras completas.
+
+A instalação local agora também exige a migração `drizzle/0001_blue_giant_man.sql`, depois da 0000, usando o mesmo comando de migração e sem reaplicar arquivos já executados. Os testes específicos da Oficina estão em `tests/workshop.mjs` (executar com o servidor local aberto: `node tests/workshop.mjs`). Foram aprovados 21 testes da Oficina e 19 dos abastecimentos, totalizando 40 verificações de integração.

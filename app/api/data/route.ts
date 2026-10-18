@@ -1,6 +1,6 @@
 import { getChatGPTUser } from '../../chatgpt-auth';
 import { getDb } from '../../../db';
-import { entries } from '../../../db/schema';
+import { entries,workshopCounters } from '../../../db/schema';
 import { eq, and } from 'drizzle-orm';
 export const dynamic='force-dynamic';
 const read=(r:any)=>({...JSON.parse(r.data),id:r.id,kind:r.kind,created:r.created});
@@ -17,7 +17,8 @@ async function context(){
 export async function GET(req:Request){
  try{const c=await context();if(!c)return fail('Entre na sua conta para continuar.',401);if(!c.member)return fail('Sua conta ainda não foi autorizada pelo administrador.',403);
  const all=(await c.db.select().from(entries)).map(read); const admin=c.member.role==='admin'&&new URL(req.url).searchParams.get('view')!=='attendant';
- const data=all.filter((r:any)=>admin||['institution','vehicle','fuel'].includes(r.kind)||r.kind==='fill'&&r.actorId===c.user.userId).map((r:any)=>!admin&&r.kind==='institution'?{id:r.id,kind:r.kind,name:r.name}:!admin&&r.kind==='vehicle'?{id:r.id,kind:r.kind,name:r.name,plate:r.plate,institutionId:r.institutionId}:r);
+ const counters=admin?await c.db.select().from(workshopCounters):[];const balances=new Map(counters.map(x=>[x.id,x.units]));
+ const data=all.map((r:any)=>r.kind==='workshop_part'?{...r,balanceUnits:balances.get('part:'+r.id)??0}:r.kind==='workshop_plan'?{...r,remainingUnits:balances.get('plan:'+r.id)??0}:r).filter((r:any)=>admin||['institution','vehicle','fuel'].includes(r.kind)||r.kind==='fill'&&r.actorId===c.user.userId).map((r:any)=>!admin&&r.kind==='institution'?{id:r.id,kind:r.kind,name:r.name}:!admin&&r.kind==='vehicle'?{id:r.id,kind:r.kind,name:r.name,plate:r.plate,institutionId:r.institutionId}:r);
  return Response.json({data,user:{name:c.member.name||c.user.email,role:c.member.role,email:c.user.email}},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Não foi possível carregar os dados. Tente novamente.',500)}
 }

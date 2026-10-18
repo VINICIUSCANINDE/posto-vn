@@ -38,3 +38,9 @@ Os contratos nesta versão registram instituição, pessoa/veículo opcional e v
 - Ambas as áreas usam o mesmo banco D1. A gestão consulta novos registros a cada 5 segundos enquanto a aba está visível e ao retomar o foco.
 - Requer conexão à internet. A confirmação é exibida após a gravação e usa o preço efetivamente salvo pelo servidor.
 - A hospedagem permanece privada. Funcionários precisam de cadastro interno com perfil frentista e liberação na política de acesso Sites antes de abrir o endereço.
+
+## Oficina
+
+Novo menu administrativo com estoque de peças, entradas e saídas, uso previsto por veículo e peças efetivamente entregues. A saída identifica quem recebeu e baixa o estoque de forma atômica. Consulte `docs/03-modulo-oficina.md` para as regras completas.
+
+A instalação local agora também exige a migração `drizzle/0001_blue_giant_man.sql`, depois da 0000, usando o mesmo comando de migração e sem reaplicar arquivos já executados. Os testes específicos da Oficina estão em `tests/workshop.mjs` (executar com o servidor local aberto: `node tests/workshop.mjs`). Foram aprovados 21 testes da Oficina e 19 dos abastecimentos, totalizando 40 verificações de integração.
