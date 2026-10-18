@@ -10,7 +10,7 @@ export async function POST(req:Request){
   const user=await getChatGPTUser();if(!user)return fail('Entre na sua conta.',401);
   const db=getDb();const members=await db.select().from(entries).where(eq(entries.kind,'member'));
   const member=members.map(x=>JSON.parse(x.data)).find(x=>x.userId===user.userId||x.email===user.email.toLowerCase());
-  if(member?.role!=='admin')return fail('A Oficina é exclusiva da administração.',403);
+  if(!['admin','attendant'].includes(member?.role))return fail('Sua conta não tem permissão para controlar a Oficina.',403);
   const body=await req.json() as {action:string,values:Record<string,unknown>};const {action,values}=body;
   if(!['part','in','plan','out'].includes(action)||!values||typeof values!=='object')return fail('Operação inválida.');
   const text=(key:string)=>String(values[key]??'').trim().slice(0,200);

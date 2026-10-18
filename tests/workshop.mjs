@@ -49,8 +49,15 @@ try{
  await create('in',{partId:oil,date,quantity:0.3});await create('out',{partId:oil,vehicleId:vehicle.id,date,quantity:0.1,receiver:'TESTE'});await create('out',{partId:oil,vehicleId:vehicle.id,date,quantity:0.2,receiver:'TESTE'});
  check((await state()).find(x=>x.id===oil).balanceUnits===0,'Quantidades fracionárias não deixam resíduo de arredondamento');
  db.prepare("UPDATE entries SET data=? WHERE id='owner'").run(JSON.stringify({...ownerData,role:'attendant'}));
- check((await op('in',{...common,quantity:1})).status===403,'Frentista não pode movimentar estoque');
- check(!(await state()).some(x=>x.kind.startsWith('workshop_')),'Frentista não recebe dados da Oficina');
+ check((await op('in',{...common,quantity:1})).status===200,'Operador de abastecimentos também pode registrar entrada de peças');
+ check((await state()).some(x=>x.kind==='workshop_part'),'Operador recebe os dados da Oficina');
+ const view=await call('/api/data?view=attendant');
+ check(view.data.data.some(x=>x.kind==='workshop_part'&&typeof x.balanceUnits==='number'),'Área do operador recebe saldo atualizado da Oficina');
+ check(!view.data.data.some(x=>['member','audit','contract','person'].includes(x.kind)),'Acesso à Oficina não libera cadastros administrativos');
+ check((await create('part',{name:'Peça do operador TESTE',code:'OPERADOR-TESTE',unit:'un'})).length>0,'Operador pode cadastrar peças');
+ check((await op('out',{...common,quantity:1,receiver:'RECEBEDOR OPERADOR'})).status===200,'Operador pode registrar entrega de peças ao veículo');
+ check((await call('/api/data',{kind:'fuel',values:{name:'Não permitido',price:1}})).status===403,'Operador continua sem permissão para alterar preços de combustível');
+ check((await call('/api/data',{kind:'member',values:{name:'Não permitido',email:'teste@example.com',role:'admin'}})).status===403,'Operador não pode conceder acesso administrativo');
  db.prepare("UPDATE entries SET data=? WHERE id='owner'").run(JSON.stringify(ownerData));
  console.log(`PASSOU: ${checks} verificações da Oficina.`);
 }finally{

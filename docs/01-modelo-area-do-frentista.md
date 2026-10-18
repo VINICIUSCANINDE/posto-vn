@@ -76,3 +76,9 @@ O frentista não pode acessar relatórios gerais, fechamento mensal, cadastros d
 Já existe uma implementação com as duas áreas, banco compartilhado e atualização automática, publicada na plataforma Sites. Há código-fonte disponível no pacote controle-transporte-codigo.zip. Na validação local, passaram 19 verificações de integração; isso não substitui a homologação do desenvolvedor no ambiente escolhido.
 
 O site está privado. A liberação dos funcionários depende de cadastro interno e autorização na hospedagem. O domínio postovn.com.br ainda não foi conectado. A migração para a plataforma Google foi solicitada pelo cliente, mas não foi executada; o desenvolvedor deverá definir o serviço adequado e adaptar hospedagem, autenticação e banco, caso essa escolha seja mantida.
+
+## Acesso unificado do operador
+
+A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
+
+Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.

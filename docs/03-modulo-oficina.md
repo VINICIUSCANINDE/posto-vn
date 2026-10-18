@@ -17,7 +17,7 @@ Acesso pelo menu Oficina no painel administrativo, com quatro abas:
 As consultas aceitam busca por peça, código, placa ou recebedor, filtro por veículo nas abas pertinentes e exportação CSV da consulta atual.
 
 ## Regras
-- Exclusivo para administradores. O perfil frentista não recebe os dados da Oficina nem pode movimentar peças.
+- Disponível para administradores e operadores de abastecimentos. A mesma conta do operador registra abastecimentos e controla peças, entradas, saídas e entregas pela aba Oficina. Relatórios gerais, preços de combustíveis e gestão de usuários continuam restritos à administração.
 - Quantidades positivas, com até três casas decimais. Códigos de peças não se repetem no cadastro normal.
 - Não permitir estoque negativo ou entrega acima da pendência de um planejamento.
 - Validar que a peça e o veículo correspondem ao planejamento escolhido.
@@ -34,4 +34,4 @@ Os saldos são inteiros em milésimos. Gravação de saída, baixa no estoque e 
 Na instalação local, aplicar a migração 0000 e depois a 0001, sem reaplicar migrações já executadas. Na publicação Sites, o fluxo aplica as migrações pendentes no ambiente hospedado.
 
 ## Validação
-Compilação e TypeScript aprovados. Foram aprovadas 21 verificações específicas da Oficina, incluindo saída acima do saldo, entrega parcial e completa, veículo incorreto, recebedor obrigatório, saídas simultâneas, reversão da operação recusada, quantidades fracionárias e restrição ao frentista. Os 19 testes anteriores dos abastecimentos também passaram. Os registros fictícios foram removidos do banco local após os testes.
+Compilação e TypeScript aprovados. Foram aprovadas 27 verificações específicas da Oficina, incluindo saída acima do saldo, entrega parcial e completa, veículo incorreto, recebedor obrigatório, saídas simultâneas, reversão da operação recusada, quantidades fracionárias e permissões do operador sem acesso administrativo. Os 19 testes anteriores dos abastecimentos também passaram. Os registros fictícios foram removidos do banco local após os testes.

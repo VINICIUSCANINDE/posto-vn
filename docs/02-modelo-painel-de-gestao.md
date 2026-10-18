@@ -102,3 +102,9 @@ As duas interfaces podem ter endereços separados, mas precisam utilizar um úni
 O pacote controle-transporte-codigo.zip contém o código atual de ambas as áreas. A implementação usa a plataforma Sites, aplicação Vinext e banco Cloudflare D1; não é um projeto Google já configurado. Foram concluídos compilação, verificação TypeScript e 19 testes de integração locais, além de inspeção visual da interface.
 
 O site está privado e o domínio postovn.com.br ainda não está conectado. O cliente manifestou preferência por hospedagem Google; o desenvolvedor deverá confirmar a escolha, planejar a adaptação de aplicação, autenticação e banco, configurar o domínio e apresentar os custos antes de contratar serviços pagos. Hospedagem e liberação dos funcionários continuam sendo etapas de implantação.
+
+## Acesso unificado do operador
+
+A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
+
+Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.
