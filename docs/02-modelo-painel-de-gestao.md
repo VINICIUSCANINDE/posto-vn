@@ -1,4 +1,4 @@
-# POSTO VN — MODELO DO PAINEL DE GESTÃO
+# CONTROLE TRANSPORTE — MODELO DO PAINEL DE GESTÃO
 ## Documento para desenvolvimento
 
 ### Objetivo
@@ -7,7 +7,7 @@ Criar um painel administrativo para controlar os abastecimentos lançados pelos 
 O fluxo principal é de faturamento mensal. Não incluir recebimento online, emissão de nota fiscal ou integração com bombas sem uma contratação específica desses recursos.
 
 ### Identidade e endereço
-- Nome: Posto VN — Gestão de Abastecimentos.
+- Nome: CONTROLE TRANSPORTE — Gestão de Abastecimentos.
 - Identidade visual: verde escuro, branco e verde claro.
 - Interface adaptada a computador, tablet e celular.
 - Endereço sugerido após configuração do domínio: postovn.com.br/gestao. Esse endereço é uma proposta, ainda não conectado.
@@ -99,6 +99,6 @@ As duas interfaces podem ter endereços separados, mas precisam utilizar um úni
 - Falha de rede não é apresentada como sincronização concluída.
 
 ### Material existente e limites
-O pacote posto-vn-codigo.zip contém o código atual de ambas as áreas. A implementação usa a plataforma Sites, aplicação Vinext e banco Cloudflare D1; não é um projeto Google já configurado. Foram concluídos compilação, verificação TypeScript e 19 testes de integração locais, além de inspeção visual da interface.
+O pacote controle-transporte-codigo.zip contém o código atual de ambas as áreas. A implementação usa a plataforma Sites, aplicação Vinext e banco Cloudflare D1; não é um projeto Google já configurado. Foram concluídos compilação, verificação TypeScript e 19 testes de integração locais, além de inspeção visual da interface.
 
 O site está privado e o domínio postovn.com.br ainda não está conectado. O cliente manifestou preferência por hospedagem Google; o desenvolvedor deverá confirmar a escolha, planejar a adaptação de aplicação, autenticação e banco, configurar o domínio e apresentar os custos antes de contratar serviços pagos. Hospedagem e liberação dos funcionários continuam sendo etapas de implantação.

@@ -1,4 +1,4 @@
-# Posto VN — sistema de abastecimentos
+# CONTROLE TRANSPORTE — sistema de abastecimentos
 
 Primeira implementação validada localmente: instalação, TypeScript, compilação e 19 verificações de integração concluídas com sucesso. A interface de login, painel e fechamento mensal foi inspecionada no navegador. Dados de teste removidos do banco local. A publicação segue o fluxo Sites; domínio próprio e liberação de funcionários dependem de configuração posterior.
 

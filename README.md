@@ -1,6 +1,6 @@
-# Posto VN — sistema completo
+# CONTROLE TRANSPORTE — sistema completo
 
-Código e documentação das duas áreas do sistema de abastecimentos do Posto VN.
+Código e documentação das duas áreas do sistema de abastecimentos do CONTROLE TRANSPORTE.
 
 ## Conteúdo
 

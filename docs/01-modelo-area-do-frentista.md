@@ -1,11 +1,11 @@
-# POSTO VN — MODELO DA ÁREA DO FRENTISTA
+# CONTROLE TRANSPORTE — MODELO DA ÁREA DO FRENTISTA
 ## Documento para desenvolvimento
 
 ### Objetivo
 Criar uma área exclusiva, acessada pelo navegador no celular, tablet ou computador, para o frentista registrar abastecimentos. Cada registro deve ser gravado no mesmo banco de dados utilizado pelo painel de gestão e aparecer automaticamente para o administrador.
 
 ### Identidade e endereço
-- Nome: Posto VN — Área do Frentista.
+- Nome: CONTROLE TRANSPORTE — Área do Frentista.
 - Identidade visual: verde escuro, branco e verde claro, seguindo o painel de gestão.
 - Priorizar facilidade de uso no celular, com campos legíveis e botões grandes.
 - Endereço sugerido após configuração do domínio: postovn.com.br/frentista. Esse endereço é uma proposta, ainda não conectado.
@@ -73,6 +73,6 @@ O frentista não pode acessar relatórios gerais, fechamento mensal, cadastros d
 - O formulário funciona corretamente no celular.
 
 ### Material existente e limites
-Já existe uma implementação com as duas áreas, banco compartilhado e atualização automática, publicada na plataforma Sites. Há código-fonte disponível no pacote posto-vn-codigo.zip. Na validação local, passaram 19 verificações de integração; isso não substitui a homologação do desenvolvedor no ambiente escolhido.
+Já existe uma implementação com as duas áreas, banco compartilhado e atualização automática, publicada na plataforma Sites. Há código-fonte disponível no pacote controle-transporte-codigo.zip. Na validação local, passaram 19 verificações de integração; isso não substitui a homologação do desenvolvedor no ambiente escolhido.
 
 O site está privado. A liberação dos funcionários depende de cadastro interno e autorização na hospedagem. O domínio postovn.com.br ainda não foi conectado. A migração para a plataforma Google foi solicitada pelo cliente, mas não foi executada; o desenvolvedor deverá definir o serviço adequado e adaptar hospedagem, autenticação e banco, caso essa escolha seja mantida.
