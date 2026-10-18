@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readdirSync} from 'node:fs';
+import path from 'node:path';
+const root=process.cwd();
+const files=readdirSync(path.join(root,'.wrangler/state'),{recursive:true}).filter(f=>f.endsWith('.sqlite')&&f.includes('d1')&&!f.endsWith('metadata.sqlite'));
+assert.equal(files.length,1,'Um banco local D1 esperado');
+const db=new DatabaseSync(path.join(root,'.wrangler/state',files[0]));
+const before=db.prepare('SELECT * FROM entries').all();
+const originalIds=new Set(before.map(x=>x.id));
+const origin='http://localhost:5173';
+const request=async(body,auth=true,customOrigin=origin)=>{
+ const res=await fetch(origin+'/api/data',{method:body?'POST':'GET',headers:{...(auth?{Cookie:'__sites_local_auth=1'}:{}),...(body?{'Content-Type':'application/json',Origin:customOrigin}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const text=await res.text();let data;try{data=JSON.parse(text)}catch{data={error:text}}return{status:res.status,data};
+};
+let checks=0;
+function check(test,msg){assert.ok(test,msg);checks++;console.log('OK '+msg)}
+const put=async(kind,values,id)=>{const r=await request({kind,values,id});assert.equal(r.status,200,JSON.stringify(r.data));const all=(await request()).data.data;return all.find(x=>x.kind===kind&&(id?x.id===id:x.name===values.name||kind==='fill'&&x.driver===values.driver))};
+try{
+ check((await request(null,false)).status===401,'Visitante sem login é bloqueado');
+ let r=await request();check(r.status===200&&r.data.user.role==='admin','Proprietário privado inicializa como administrador');
+ const inst=await put('institution',{name:'TESTE Instituição',document:'',contact:''});
+ const vehicle=await put('vehicle',{name:'TESTE Veículo',plate:'TST1A23',institutionId:inst.id});
+ const fuel=await put('fuel',{name:'TESTE Gasolina',price:6.25});
+ check((await request({kind:'vehicle',values:{name:'Duplicado',plate:'TST1A23',institutionId:inst.id}})).status===400,'Placa duplicada é rejeitada');
+ const date=new Date(Date.now()-10800000).toISOString().slice(0,10);
+ const fill=await put('fill',{vehicleId:vehicle.id,fuelId:fuel.id,date,liters:40,km:1000,driver:'TESTE Motorista'});
+ check(fill.totalCents===25000&&fill.institution===inst.name,'40 litros a R$ 6,25 geram R$ 250,00 na instituição correta');
+ await put('fuel',{name:fuel.name,price:7},fuel.id);
+ r=await request();check(r.data.data.find(x=>x.id===fill.id).totalCents===25000,'Alterar preço preserva o abastecimento anterior');
+ check((await request({kind:'fill',id:fill.id,values:{}})).status===400,'Abastecimento anterior não pode ser sobrescrito');
+ check((await request({kind:'fill',values:{vehicleId:vehicle.id,fuelId:fuel.id,date,liters:-10,km:1000}})).status===400,'Litros negativos são rejeitados');
+ check((await request({kind:'fill',values:{vehicleId:vehicle.id,fuelId:fuel.id,date,liters:10,km:900}})).status===400,'Odômetro regressivo é rejeitado');
+ check((await request({kind:'institution',values:{name:'Origem inválida'}},true,'https://outro.example')).status===403,'Requisição de outra origem é bloqueada');
+ const owner=db.prepare("SELECT data FROM entries WHERE id='owner'").get();
+ const ownerData=JSON.parse(owner.data);db.prepare("UPDATE entries SET data=? WHERE id='owner'").run(JSON.stringify({...ownerData,role:'attendant'}));
+ r=await request();check(r.status===200&&r.data.user.role==='attendant','Perfil de frentista reconhecido no servidor');
+ check(!r.data.data.some(x=>['audit','member','contract','person'].includes(x.kind)),'Frentista não recebe cadastros administrativos ou auditoria');
+ check((await request({kind:'fuel',id:fuel.id,values:{name:fuel.name,price:1}})).status===403,'Frentista não altera preços');
+ check((await request({kind:'institution',values:{name:'Não permitido'}})).status===403,'Frentista não cadastra instituição');
+ const fill2=await request({kind:'fill',values:{vehicleId:vehicle.id,fuelId:fuel.id,date,liters:10,km:1100,driver:'TESTE Frentista'}});
+ check(fill2.status===200,'Frentista consegue lançar abastecimento');
+ const ownFill=(await request()).data.data.find(x=>x.driver==='TESTE Frentista');
+ check(!!ownFill&&ownFill.totalCents===7000,'Lançamento do frentista usa o preço vigente');
+ db.prepare('INSERT INTO entries(id,kind,data,created,actor) VALUES (?,?,?,?,?)').run('test-other-fill','fill',JSON.stringify({...ownFill,actorId:'other-user',driver:'OUTRA CONTA'}),new Date().toISOString(),'other-user');
+ check(!(await request()).data.data.some(x=>x.driver==='OUTRA CONTA'),'Frentista não recebe lançamentos de outra conta');
+ db.prepare("UPDATE entries SET data=? WHERE id='owner'").run(JSON.stringify(ownerData));
+ const management=(await request()).data;
+ check(management.user.role==='admin'&&management.data.some(x=>x.driver==='TESTE Frentista'&&x.totalCents===7000),'Gestão recebe automaticamente o abastecimento salvo pelo frentista no mesmo banco');
+ const staffView=await fetch(origin+'/api/data?view=attendant',{headers:{Cookie:'__sites_local_auth=1'}}).then(r=>r.json());
+ check(!staffView.data.some(x=>['member','audit','contract','person'].includes(x.kind)),'Área exclusiva do frentista limita dados mesmo durante prévia pelo administrador');
+ check(!staffView.data.some(x=>x.driver==='OUTRA CONTA'),'Área do frentista filtra histórico por usuário no servidor');
+ console.log(`PASSOU: ${checks} verificações de integração.`);
+}finally{
+ const current=db.prepare('SELECT id FROM entries').all();
+ for(const x of current)if(!originalIds.has(x.id))db.prepare('DELETE FROM entries WHERE id=?').run(x.id);
+ for(const x of before)db.prepare('UPDATE entries SET data=?,actor=? WHERE id=?').run(x.data,x.actor,x.id);
+ db.close();
+ console.log('Dados de teste removidos do banco local.');
+}
