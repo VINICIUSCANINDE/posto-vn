@@ -353,8 +353,8 @@ export default function Attendant() {
                   <Input {...bind('liters')} label="Litros" type="number" inputMode="decimal" step={0.001} min={0.001} max={10000} placeholder="0,000" />
                   <Input {...bind('km')} label="Odômetro (km)" type="text" inputMode="numeric" autoComplete="off"
                     value={kmDigits ? num(Number(kmDigits), 0) : ''} onValueChange={(v) => field('km', v.replace(/\D/g, '').slice(0, 7))}
-                    placeholder={vehicle?.lastKm != null ? num(vehicle.lastKm, 0) : 'Ex.: 42.500'}
-                    hint={vehicle?.lastKm != null ? `Último: ${num(vehicle.lastKm, 0)} km` : undefined} />
+                    placeholder="Ex.: 42.500"
+                    hint={vehicle?.lastKm != null ? `Último registro: ${num(vehicle.lastKm, 0)} km` : undefined} />
                 </div>
                 <Input {...bind('date')} label="Data" type="date" max={today()} />
                 <details className="extras" open={Boolean(form.driver || form.note) || undefined}>

@@ -172,7 +172,8 @@ export default function Dashboard() {
     setPage(p);
     setQuery('');
     setNavOpen(false);
-    document.getElementById('conteudo')?.focus();
+    document.getElementById('conteudo')?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0 });
   }
 
   function open(kind: Kind, row?: Row) {
@@ -292,13 +293,13 @@ export default function Dashboard() {
             <tr key={x.id}>
               <td data-label="Data">{dateBR(x.date).slice(0, 5)}</td>
               <td data-label="Placa"><span className="plate">{x.plate}</span></td>
-              <td data-label="Veículo" className="strong">{x.vehicle}{x.driver ? <small>{x.driver}</small> : null}</td>
-              <td data-label="Instituição">{instName(x)}</td>
+              <td data-label="Veículo" className="strong clip" title={x.vehicle}>{x.vehicle}{x.driver ? <small>{x.driver}</small> : null}</td>
+              <td data-label="Instituição" className="clip" title={instName(x)}>{instName(x)}</td>
               <td data-label="Combustível">{fuelTag(x.fuel)}</td>
               {!compact && <td data-label="Preço/L" className="num">{money(x.priceCents)}</td>}
               <td data-label="Litros" className="num">{num(x.liters)} L</td>
               {!compact && <td data-label="Odômetro" className="num">{num(x.km, 0)} km</td>}
-              {!compact && <td data-label="Lançado por">{x.attendant}</td>}
+              {!compact && <td data-label="Lançado por" title={x.attendant}>{String(x.attendant || '').split(' ')[0]}</td>}
               <td data-label="Total" className="num strong total-cell">{money(x.totalCents)}</td>
             </tr>
           ))}
