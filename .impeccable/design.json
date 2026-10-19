@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-19T01:54:41+00:00",
+  "title": "Design System: Controle de Transporte",
+  "extensions": {
+    "colorMeta": {
+      "brand": {
+        "role": "primary",
+        "displayName": "Verde Pista",
+        "canonical": "#157255",
+        "oklch": "oklch(49.3% 0.095 166)",
+        "tonalRamp": [
+          "#000f08",
+          "#01291c",
+          "#0e4b37",
+          "#187457",
+          "#459879",
+          "#6fc1a1",
+          "#92e5c3",
+          "#c3fee4"
+        ]
+      },
+      "brand-hover": {
+        "role": "primary",
+        "displayName": "Verde Pista Fechado",
+        "canonical": "#105f46",
+        "oklch": "oklch(43.3% 0.084 166)",
+        "tonalRamp": [
+          "#010f08",
+          "#02291c",
+          "#034c36",
+          "#2a7258",
+          "#50967b",
+          "#78bfa2",
+          "#9be3c5",
+          "#c4fee4"
+        ]
+      },
+      "brand-dark": {
+        "role": "primary",
+        "displayName": "Verde Profundo",
+        "canonical": "#102d26",
+        "oklch": "oklch(27.2% 0.038 175)",
+        "tonalRamp": [
+          "#000f0b",
+          "#0a2721",
+          "#29463f",
+          "#4d6b62",
+          "#6f8e85",
+          "#96b6ad",
+          "#b8dad0",
+          "#d6f7ed"
+        ]
+      },
+      "brand-soft": {
+        "role": "secondary",
+        "displayName": "Verde Claro de Seleção",
+        "canonical": "#eaf4ed",
+        "oklch": "oklch(95.8% 0.014 156)",
+        "tonalRamp": [
+          "#070d09",
+          "#1c241f",
+          "#3a423d",
+          "#5d6660",
+          "#808983",
+          "#a7b1aa",
+          "#cad4cd",
+          "#e7f1ea"
+        ]
+      },
+      "brand-soft-2": {
+        "role": "secondary",
+        "displayName": "Verde Claro de Contorno",
+        "canonical": "#d3e8da",
+        "oklch": "oklch(91.2% 0.029 157)",
+        "tonalRamp": [
+          "#020f06",
+          "#16261c",
+          "#334539",
+          "#56685c",
+          "#788c7f",
+          "#a0b4a6",
+          "#c2d7c9",
+          "#e0f5e7"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#14231c",
+        "oklch": "oklch(24.0% 0.025 164)",
+        "tonalRamp": [
+          "#020e08",
+          "#16251e",
+          "#34443c",
+          "#57685f",
+          "#798b82",
+          "#a1b3aa",
+          "#c3d6cd",
+          "#e0f4ea"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Tinta Média",
+        "canonical": "#3f4f46",
+        "oklch": "oklch(41.1% 0.025 160)",
+        "tonalRamp": [
+          "#030e08",
+          "#17251e",
+          "#34443b",
+          "#57685e",
+          "#7a8b81",
+          "#a1b3a9",
+          "#c4d6cb",
+          "#e1f4e9"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Tinta Suave",
+        "canonical": "#56655c",
+        "oklch": "oklch(49.1% 0.023 159)",
+        "tonalRamp": [
+          "#030e08",
+          "#18251e",
+          "#36443b",
+          "#58685e",
+          "#7b8b81",
+          "#a2b3a9",
+          "#c5d6cc",
+          "#e2f4e9"
+        ]
+      },
+      "on-dark": {
+        "role": "neutral",
+        "displayName": "Sobre Escuro",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#222222",
+          "#404040",
+          "#636363",
+          "#868686",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ]
+      },
+      "on-dark-2": {
+        "role": "neutral",
+        "displayName": "Sobre Escuro Secundário",
+        "canonical": "#c4d8cc",
+        "oklch": "oklch(86.4% 0.027 159)",
+        "tonalRamp": [
+          "#020f07",
+          "#16261d",
+          "#34443b",
+          "#56685e",
+          "#798b80",
+          "#a0b3a8",
+          "#c3d7cb",
+          "#e0f4e8"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Fundo da Pista",
+        "canonical": "#f5f7f5",
+        "oklch": "oklch(97.4% 0.003 146)",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#212221",
+          "#3f403f",
+          "#626462",
+          "#858785",
+          "#adaead",
+          "#d0d1d0",
+          "#edefed"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Superfície",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#222222",
+          "#404040",
+          "#636363",
+          "#868686",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Superfície Elevada",
+        "canonical": "#f8faf8",
+        "oklch": "oklch(98.3% 0.003 146)",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#212221",
+          "#3f403f",
+          "#626462",
+          "#858785",
+          "#adaead",
+          "#d0d1d0",
+          "#edefed"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Linha",
+        "canonical": "#e1e7e2",
+        "oklch": "oklch(92.2% 0.009 151)",
+        "tonalRamp": [
+          "#080c09",
+          "#1f231f",
+          "#3c413d",
+          "#606560",
+          "#828883",
+          "#aab0ab",
+          "#cdd3ce",
+          "#eaf0eb"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Linha Forte",
+        "canonical": "#7d8c81",
+        "oklch": "oklch(62.5% 0.024 154)",
+        "tonalRamp": [
+          "#040e07",
+          "#19251c",
+          "#36443a",
+          "#59675d",
+          "#7c8b80",
+          "#a3b3a7",
+          "#c6d6ca",
+          "#e3f3e7"
+        ]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Erro",
+        "canonical": "#b42318",
+        "oklch": "oklch(50.0% 0.182 30)",
+        "tonalRamp": [
+          "#1e0100",
+          "#450402",
+          "#7b0602",
+          "#b42318",
+          "#de4f3f",
+          "#fd8776",
+          "#fcc0b6",
+          "#ffe9e5"
+        ]
+      },
+      "danger-soft": {
+        "role": "status",
+        "displayName": "Erro Suave",
+        "canonical": "#fdf0ee",
+        "oklch": "oklch(96.5% 0.014 28)",
+        "tonalRamp": [
+          "#110908",
+          "#281f1e",
+          "#473d3b",
+          "#6b605f",
+          "#8f8381",
+          "#b7aba9",
+          "#dacecc",
+          "#f8ebe9"
+        ]
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Atenção",
+        "canonical": "#7a4f00",
+        "oklch": "oklch(46.4% 0.099 73)",
+        "tonalRamp": [
+          "#130900",
+          "#311d00",
+          "#56390a",
+          "#855913",
+          "#aa7c3c",
+          "#d4a465",
+          "#f9c787",
+          "#ffebd3"
+        ]
+      },
+      "warn-soft": {
+        "role": "status",
+        "displayName": "Atenção Suave",
+        "canonical": "#fdf5e1",
+        "oklch": "oklch(97.1% 0.028 89)",
+        "tonalRamp": [
+          "#100a01",
+          "#272112",
+          "#463f2f",
+          "#6a6352",
+          "#8d8674",
+          "#b5ad9b",
+          "#d8d0bd",
+          "#f6eeda"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Valor dos KPIs e total do comprovante."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Título de página e do card de login; totais de extrato e lançamento."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Título de modal e do formulário de lançamento."
+      },
+      "title-sm": {
+        "displayName": "Title pequeno",
+        "purpose": "Título de painel, estado vazio, nome de opção."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto corrido, células, botões."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Rótulos de campo, links de ação, contexto dos KPIs."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Cabeçalho de tabela, tags, eixos; piso de 12px."
+      },
+      "plate": {
+        "displayName": "Placa",
+        "purpose": "Toda placa de veículo."
+      }
+    },
+    "shadows": [
+      {
+        "name": "repouso",
+        "value": "0 1px 2px rgba(16, 45, 38, 0.05)",
+        "purpose": "Cards, KPIs e painéis em repouso."
+      },
+      {
+        "name": "sobreposicao",
+        "value": "0 16px 40px rgba(16, 45, 38, 0.18), 0 2px 6px rgba(16, 45, 38, 0.08)",
+        "purpose": "Só o que flutua: modal, lista do select, toast, gaveta aberta, card de login."
+      },
+      {
+        "name": "barra-fixa",
+        "value": "0 -6px 16px rgba(16, 45, 38, 0.06)",
+        "purpose": "Rodapé de envio do lançamento (tabbar usa 0 -4px 16px)."
+      },
+      {
+        "name": "veu",
+        "value": "rgba(16, 45, 38, 0.45)",
+        "purpose": "Fundo atrás de modal (gaveta usa 0.4)."
+      },
+      {
+        "name": "foco",
+        "value": "outline: 2px solid #157255; outline-offset: 2px",
+        "purpose": "Foco visível de todo controle (campos usam afastamento de 1px)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entradas: gaveta (0.25s), toast (0.25s, sobe 8px), lista do select (0.14s, desce 4px), ícone do comprovante (0.4s, escala de 0.7)."
+      },
+      {
+        "name": "estado",
+        "value": "0.15s",
+        "purpose": "Troca de fundo e borda em botões, opções e cartões de perfil; giro do chevron do select."
+      },
+      {
+        "name": "contagem",
+        "value": "0.9s",
+        "purpose": "Contagem dos valores de KPI na carga, com texto real para leitores de tela."
+      },
+      {
+        "name": "revelacao",
+        "value": "0.5s, fade com desfoque de 4px",
+        "purpose": "Entrada do bloco de KPIs."
+      },
+      {
+        "name": "titulo",
+        "value": "desfoque por palavra, 70ms entre palavras",
+        "purpose": "Títulos das telas de autenticação."
+      },
+      {
+        "name": "movimento-reduzido",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Desliga contagem, revelação, desfoque de título, transições e entradas; o spinner desacelera para 2.4s."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "kpis-2col",
+        "value": "1279px"
+      },
+      {
+        "name": "tablet",
+        "value": "1023px"
+      },
+      {
+        "name": "celular",
+        "value": "760px"
+      },
+      {
+        "name": "celular-estreito",
+        "value": "380px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão primário",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal da região; no máximo um por Toolbar ou rodapé.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg> Novo abastecimento</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:0 14px;border-radius:var(--radius,8px);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;font-size:0.875rem;font-weight:600;white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s;background:var(--brand,#157255);border:1px solid var(--brand,#157255);color:#fff;} .ds-btn-primary:hover{background:var(--brand-hover,#105f46);border-color:var(--brand-hover,#105f46);} .ds-btn-primary:focus-visible{outline:2px solid var(--brand,#157255);outline-offset:2px;} .ds-btn-primary:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ações de apoio: imprimir, atualizar, cancelar.",
+      "html": "<button class=\"ds-btn\">Imprimir / PDF</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:0 14px;border-radius:var(--radius,8px);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;font-size:0.875rem;font-weight:600;white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s;background:var(--surface,#fff);border:1px solid var(--line-strong,#7d8c81);color:var(--ink,#14231c);} .ds-btn:hover{background:var(--surface-2,#f8faf8);} .ds-btn:focus-visible{outline:2px solid var(--brand,#157255);outline-offset:2px;}"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo com rótulo acima, dica ou erro abaixo.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-l\">Litros</label><input id=\"ds-l\" placeholder=\"0,000\"><p class=\"ds-hint\">Use vírgula para decimais</p></div>",
+      "css": ".ds-field{display:grid;gap:6px;font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;} .ds-field label{font-size:.8125rem;font-weight:600;color:var(--ink,#14231c);} .ds-field input{min-height:40px;padding:0 12px;border:1px solid var(--line-strong,#7d8c81);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14231c);font:inherit;font-size:.875rem;} .ds-field input::placeholder{color:var(--ink-3,#56655c);} .ds-field input:focus{outline:2px solid var(--brand,#157255);outline-offset:1px;border-color:var(--brand,#157255);} .ds-hint{margin:0;color:var(--ink-3,#56655c);font-size:.8125rem;}"
+    },
+    {
+      "name": "Select (Radix)",
+      "kind": "input",
+      "refersTo": "select-trigger",
+      "description": "Select próprio: gatilho no padrão dos campos e lista do sistema; nunca o popup nativo.",
+      "html": "<div class=\"ds-select\"><button class=\"ds-select-trigger\" aria-expanded=\"true\"><span>outubro de 2026</span><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div class=\"ds-select-list\" role=\"listbox\"><div class=\"ds-select-item\" role=\"option\">setembro de 2026</div><div class=\"ds-select-item is-on\" role=\"option\" aria-selected=\"true\">outubro de 2026<span class=\"ds-check\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg></span></div></div></div>",
+      "css": ".ds-select{display:inline-grid;gap:4px;font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;min-width:220px;} .ds-select-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px;padding:0 12px;border:1px solid var(--brand,#157255);outline:2px solid var(--brand,#157255);outline-offset:1px;border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14231c);font:inherit;font-size:.875rem;cursor:pointer;} .ds-select-trigger svg{color:var(--ink-3,#56655c);transform:rotate(180deg);} .ds-select-list{padding:4px;background:var(--surface,#fff);border:1px solid var(--line,#e1e7e2);border-radius:8px;box-shadow:0 16px 40px rgba(16,45,38,.18),0 2px 6px rgba(16,45,38,.08);} .ds-select-item{position:relative;display:flex;align-items:center;min-height:36px;padding:6px 34px 6px 10px;border-radius:6px;font-size:.875rem;color:var(--ink,#14231c);cursor:pointer;} .ds-select-item:hover{background:var(--brand-soft,#eaf4ed);color:var(--brand-dark,#102d26);} .ds-select-item.is-on{font-weight:600;color:var(--brand-hover,#105f46);} .ds-check{position:absolute;right:10px;display:inline-flex;color:var(--brand,#157255);}"
+    },
+    {
+      "name": "Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Etiqueta informativa (combustível, situação); não é filtro.",
+      "html": "<span class=\"ds-tag\">Etanol</span> <span class=\"ds-tag ds-tag-brand\">Concluído</span> <span class=\"ds-tag ds-tag-warn\">Estoque baixo</span>",
+      "css": ".ds-tag{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--surface-2,#f8faf8);border:1px solid var(--line,#e1e7e2);color:var(--ink-2,#3f4f46);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;font-size:.75rem;font-weight:500;} .ds-tag-brand{background:var(--brand-soft,#eaf4ed);border-color:var(--brand-soft-2,#d3e8da);color:var(--brand-hover,#105f46);} .ds-tag-warn{background:var(--warn-soft,#fdf5e1);border-color:#f0dfb4;color:var(--warn,#7a4f00);}"
+    },
+    {
+      "name": "Card de KPI",
+      "kind": "card",
+      "refersTo": "kpi",
+      "description": "Indicador simples, sem ícone nem hover.",
+      "html": "<div class=\"ds-kpi\"><h2>Valor total</h2><strong>R$ 8.941,28</strong><p>Preço médio R$ 5,84 por litro</p></div>",
+      "css": ".ds-kpi{padding:18px 20px;background:var(--surface,#fff);border:1px solid var(--line,#e1e7e2);border-radius:12px;box-shadow:0 1px 2px rgba(16,45,38,.05);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;max-width:280px;} .ds-kpi h2{margin:0;font-size:.8125rem;font-weight:500;color:var(--ink-2,#3f4f46);} .ds-kpi strong{display:block;margin:4px 0 2px;font-size:1.875rem;font-weight:650;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--ink,#14231c);} .ds-kpi p{margin:0;font-size:.8125rem;color:var(--ink-3,#56655c);}"
+    },
+    {
+      "name": "Toolbar",
+      "kind": "custom",
+      "refersTo": "toolbar",
+      "description": "Padrão de todas as telas: busca e filtros à esquerda, ações à direita.",
+      "html": "<div class=\"ds-toolbar\" role=\"group\"><div class=\"ds-tb-filters\"><label class=\"ds-search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" placeholder=\"Placa, veículo ou instituição\"></label><button class=\"ds-tb-select\">Todas as instituições <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button></div><div class=\"ds-tb-actions\"><button class=\"ds-tb-btn\">Imprimir / PDF</button><button class=\"ds-tb-btn ds-tb-primary\">Exportar planilha</button></div></div>",
+      "css": ".ds-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;font-size:.875rem;} .ds-tb-filters,.ds-tb-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;} .ds-tb-actions{margin-left:auto;} .ds-search{display:flex;align-items:center;gap:8px;width:300px;min-height:40px;padding:0 12px;border:1px solid var(--line-strong,#7d8c81);border-radius:8px;background:var(--surface,#fff);color:var(--ink-3,#56655c);} .ds-search:focus-within{outline:2px solid var(--brand,#157255);outline-offset:1px;border-color:var(--brand,#157255);} .ds-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:var(--ink,#14231c);} .ds-tb-select{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border:1px solid var(--line-strong,#7d8c81);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14231c);font:inherit;cursor:pointer;} .ds-tb-btn{min-height:40px;padding:0 14px;border:1px solid var(--line-strong,#7d8c81);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14231c);font:inherit;font-weight:600;cursor:pointer;transition:background-color .15s;} .ds-tb-btn:hover{background:var(--surface-2,#f8faf8);} .ds-tb-primary{background:var(--brand,#157255);border-color:var(--brand,#157255);color:#fff;} .ds-tb-primary:hover{background:var(--brand-hover,#105f46);} .ds-tb-btn:focus-visible,.ds-tb-select:focus-visible{outline:2px solid var(--brand,#157255);outline-offset:2px;}"
+    },
+    {
+      "name": "Item de navegação",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Item da sidebar; ativo em verde claro.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item\" aria-current=\"page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg> Visão geral</button><button class=\"ds-nav-item\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg> Abastecimentos <span class=\"ds-count\">13</span></button></nav>",
+      "css": ".ds-nav{display:grid;gap:2px;width:240px;padding:12px;background:var(--surface,#fff);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;} .ds-nav-item{display:flex;align-items:center;gap:10px;min-height:36px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--ink-2,#3f4f46);font:inherit;font-size:.875rem;font-weight:500;text-align:left;cursor:pointer;} .ds-nav-item svg{color:var(--ink-3,#56655c);} .ds-nav-item:hover{background:var(--surface-2,#f8faf8);color:var(--ink,#14231c);} .ds-nav-item[aria-current=page]{background:var(--brand-soft,#eaf4ed);color:var(--brand-hover,#105f46);font-weight:600;} .ds-nav-item[aria-current=page] svg{color:var(--brand,#157255);} .ds-nav-item:focus-visible{outline:2px solid var(--brand,#157255);outline-offset:2px;} .ds-count{margin-left:auto;padding:0 6px;border-radius:999px;background:var(--surface-2,#f8faf8);border:1px solid var(--line,#e1e7e2);font-size:.75rem;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Cartões de opção",
+      "kind": "custom",
+      "refersTo": "option-card",
+      "description": "Escolha de combustível no lançamento, com preço por litro.",
+      "html": "<div class=\"ds-options\"><label class=\"ds-opt is-checked\"><input type=\"radio\" name=\"ds-f\" checked><span class=\"ds-opt-name\">Etanol</span><span class=\"ds-opt-detail\">R$ 4,39/L</span></label><label class=\"ds-opt\"><input type=\"radio\" name=\"ds-f\"><span class=\"ds-opt-name\">Diesel S10</span><span class=\"ds-opt-detail\">R$ 5,99/L</span></label></div>",
+      "css": ".ds-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;max-width:360px;} .ds-opt{position:relative;display:grid;gap:2px;min-height:60px;padding:10px 14px;border:1px solid var(--line-strong,#7d8c81);border-radius:8px;background:var(--surface,#fff);cursor:pointer;transition:border-color .15s,background-color .15s;} .ds-opt input{position:absolute;opacity:0;width:1px;height:1px;} .ds-opt:focus-within{outline:2px solid var(--brand,#157255);outline-offset:2px;} .ds-opt.is-checked{border-color:var(--brand,#157255);background:var(--brand-soft,#eaf4ed);box-shadow:inset 0 0 0 1px var(--brand,#157255);} .ds-opt-name{font-weight:600;font-size:1rem;color:var(--ink,#14231c);} .ds-opt-detail{color:var(--ink-2,#3f4f46);font-size:.8125rem;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Rodapé de envio do lançamento",
+      "kind": "custom",
+      "refersTo": "fill-modal",
+      "description": "Rodapé fixo do modal de lançamento: total ao vivo e salvar no alcance do polegar.",
+      "html": "<div class=\"ds-submit\"><div class=\"ds-total\"><small>Valor do abastecimento</small><strong>R$ 439,00</strong><span>Preço definido pela gestão</span></div><button class=\"ds-btn-lg\">Salvar e enviar</button></div>",
+      "css": ".ds-submit{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-top:1px solid var(--line,#e1e7e2);background:var(--surface,#fff);box-shadow:0 -6px 16px rgba(16,45,38,.06);font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;max-width:420px;} .ds-total small{display:block;color:var(--ink-3,#56655c);font-size:.75rem;font-weight:600;} .ds-total strong{display:block;font-size:1.5rem;line-height:1.2;color:var(--brand-dark,#102d26);font-variant-numeric:tabular-nums;} .ds-total span{color:var(--ink-3,#56655c);font-size:.75rem;} .ds-btn-lg{min-height:48px;padding:0 20px;border:1px solid var(--brand,#157255);border-radius:8px;background:var(--brand,#157255);color:#fff;font:inherit;font-size:1rem;font-weight:600;cursor:pointer;transition:background-color .15s;} .ds-btn-lg:hover{background:var(--brand-hover,#105f46);} .ds-btn-lg:focus-visible{outline:2px solid var(--brand,#157255);outline-offset:2px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Livro-Caixa da Pista",
+    "overview": "O Controle de Transporte é uma ferramenta de trabalho SaaS limpa e silenciosa, o padrão da categoria executado sem ironia nem enfeite, no nível de acabamento de Stripe Dashboard, Linear e Nubank/Conta Azul. Tudo existe para duas certezas: o administrador fecha cada instituição com um extrato que se lê como documento de cobrança, e o colaborador, em pé na pista com um celular simples, sabe sem dúvida que o lançamento foi recebido.\n\nSuperfícies brancas sobre um fundo cinza-esverdeado, um único verde como cor de ação e seleção, um verde profundo para os números fortes e para o cabeçalho do colaborador. A densidade é a de um painel de gestão: tabelas com numerais tabulares alinhados à direita, cards de indicadores sem decoração, bordas finas e uma única sombra suave reservada para o que flutua (modal, menu de seleção, toast, card de login). No celular, a mesma linguagem ganha alvos de toque de 44 a 52px e campos de 48px.\n\nA interface recusa os vícios de template: sem seletor de espaço de trabalho, sem card de destaque decorativo, sem rótulos-sobretítulo (kickers), sem micro-texto cinza de 7 a 10px, sem efeito de hover ou spotlight nos cards e sem fundo animado no login.",
+    "keyCharacteristics": [
+      "Paleta verde fixa: um verde de ação, um verde profundo, um verde claro de seleção, neutros tingidos de verde.",
+      "Pilha de fontes do sistema, escala em rem de 12/13/14/16/20/24/30, numerais tabulares.",
+      "Raios de 8px nos controles e 12px nos contêineres; bordas finas; sombra só no que flutua.",
+      "Toolbar padronizada em todas as telas: filtros à esquerda, ações à direita.",
+      "Selects próprios (Radix) com a lista do sistema, nunca o popup nativo.",
+      "Lançamento sempre em modal, com rodapé fixo de total ao vivo e botão de salvar no alcance do polegar."
+    ],
+    "rules": [
+      {
+        "name": "A Regra da Paleta Fixa",
+        "body": "A família de cor é verde e não muda: verde escuro, verde e verde claro sobre branco e fundo cinza-esverdeado. Cinzas e estados podem ser ajustados para atingir contraste AA; trocar a família, não.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra da Voz Única",
+        "body": "O Verde Pista é a única cor de ação e seleção. Nenhum segundo acento, nenhum gradiente decorativo; o único degradê do sistema é o fundo estático do login (verde claro para o fundo da pista em 320px).",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra do Piso de 12px",
+        "body": "Nenhum texto visível abaixo de 12px (a única exceção é o rótulo do eixo do gráfico no celular, 11px). Micro-texto cinza não existe.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra do Número Alinhado",
+        "body": "Todo valor, litro, contagem e total usa numerais tabulares e, em tabelas, alinha à direita.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra da Placa",
+        "body": "Placa de veículo é sempre monoespaçada, com espaçamento de letras; é o identificador que o colaborador confere na bomba.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra da Toolbar",
+        "body": "Toda tela com filtros ou ações tem a mesma Toolbar, logo abaixo do cabeçalho: busca e selects à esquerda, ações à direita, 40px de altura no desktop e 44px no celular. Ações de página não moram no cabeçalho nem na sidebar.",
+        "section": "layout"
+      },
+      {
+        "name": "A Regra do Polegar",
+        "body": "No celular, todo alvo de toque tem no mínimo 44px; a ação de salvar fica no rodapé fixo, ao alcance do polegar.",
+        "section": "layout"
+      },
+      {
+        "name": "A Regra do Card Quieto",
+        "body": "Cards e KPIs não reagem ao ponteiro: nenhum hover, spotlight, brilho, inclinação ou elevação. Só controles interativos (botões, opções, linhas de tabela, itens de navegação) têm estado de hover.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do usar o Verde Pista (#157255) como a única cor de ação e seleção, e o Verde Profundo (#102d26) para números fortes e o cabeçalho do colaborador.",
+      "Do colocar toda busca e filtro à esquerda e toda ação à direita na Toolbar padronizada, logo abaixo do cabeçalho da página, em todas as telas.",
+      "Do abrir o lançamento de abastecimento sempre em modal, com rodapé fixo de total ao vivo e o botão \"Salvar e enviar\".",
+      "Do usar o Select próprio (Radix) para toda escolha em lista, e cartões de opção para combustível.",
+      "Do escrever \"colaborador\" em todo texto visível e \"Controle de Transporte\" como nome do produto.",
+      "Do usar numerais tabulares alinhados à direita em todo valor e placa em fonte monoespaçada.",
+      "Do dar 44px a todo alvo de toque no celular e 16px de fonte aos campos para evitar zoom.",
+      "Do desligar contagem, revelação, desfoque de título e entradas animadas quando o usuário pede movimento reduzido."
+    ],
+    "donts": [
+      "Don't colocar efeito de hover, spotlight, brilho ou elevação em cards e KPIs.",
+      "Don't animar o fundo do login; o degradê é estático.",
+      "Don't colocar a ação \"Novo abastecimento\" no painel do administrador nem na sidebar; ela existe só na Toolbar e na tabbar da área do colaborador.",
+      "Don't usar o select nativo do navegador nem o seu popup.",
+      "Don't mostrar \"frentista\" na interface (o termo vive só na rota `/frentista` e em nomes internos), nem \"Posto VN\" ou \"CONTROLE TRANSPORTE\".",
+      "Don't trocar a família de cor, adicionar um segundo acento ou gradientes decorativos.",
+      "Don't usar rótulos-sobretítulo (kickers), seletor de espaço de trabalho, card de destaque decorativo ou texto abaixo de 12px.",
+      "Don't usar sombra em elementos em repouso além da sombra de Repouso; a sombra de Sobreposição é só do que flutua."
+    ]
+  }
+}
