@@ -1,56 +1,57 @@
-# CONTROLE TRANSPORTE — sistema de abastecimentos
+# Controle de Transporte — implementação atual
 
-Primeira implementação validada localmente: instalação, TypeScript, compilação e 19 verificações de integração concluídas com sucesso. A interface de login, painel e fechamento mensal foi inspecionada no navegador. Dados de teste removidos do banco local. A publicação segue o fluxo Sites; domínio próprio e liberação de funcionários dependem de configuração posterior.
+Sistema em Next.js 16 na Vercel, com banco Neon Postgres e login próprio (Better Auth). Instalação, TypeScript, compilação e os testes de integração (22 verificações) e da Oficina (28 verificações) passam localmente. Os fluxos de login por perfil, convite, recuperação de senha, lançamento em modal e selects foram verificados no navegador (Playwright) em desktop e celular.
 
-## Funcionalidades implementadas no código
+## Funcionalidades
 
-- Interface responsiva em português, sem dados fictícios.
-- Perfis administrador e frentista com autorização nas operações do servidor.
+- Interface responsiva em português.
+- Perfis administrador e colaborador, com autorização verificada nas operações do servidor.
+- Login por e-mail e senha com tela própria para cada perfil (`/entrar/administrador` e `/entrar/colaborador`), a partir da escolha em `/entrar`.
+- Criação do primeiro administrador quando o banco não tem nenhuma conta.
+- Contas novas por link de convite (3 horas, uso único) e recuperação de senha por e-mail.
 - Instituições, pessoas, veículos vinculados a instituições, contratos, combustíveis e equipe.
 - Abastecimentos com data, placa, instituição, motorista, litros, odômetro e preço vigente.
 - Preços e nomes preservados no histórico de abastecimentos.
-- Relatório mensal por instituição e relação de veículos/abastecimentos.
-- Exportação CSV compatível com planilhas e impressão em PDF pelo navegador.
-- Banco D1 compartilhado entre dispositivos.
+- Fechamento mensal por instituição, com exportação CSV e impressão em PDF pelo navegador.
+- Oficina: estoque de peças, entradas, uso previsto por veículo e entregas (`docs/03-modulo-oficina.md`).
 - Alterações de cadastros registradas em auditoria; lançamentos não são sobrescritos.
 
-## Pendências para funcionamento
+## Contas e acesso
 
-1. Dependências instaladas e registradas em pnpm-lock.yaml.
-2. Migração gerada e inspecionada em drizzle/0000_redundant_weapon_omega.sql.
-3. Compilação pelo helper Sites concluída.
-4. Migração local aplicada. Testes de integração: autenticação, instituição, veículo, combustível, cálculo, preço histórico, placa duplicada, litros negativos, odômetro regressivo, proteção contra origem externa e permissões do frentista. O teste foi executado com dados fictícios e limpeza posterior.
-5. Sincronizar o código e publicar com o fluxo Sites usando o project_id já existente em `.openai/hosting.json`. Não criar outro site.
-6. Abrir o site privado como proprietário antes de liberar qualquer outra conta. O primeiro usuário autenticado, durante a fase privada, recebe o perfil administrador principal.
-7. Cadastrar preços, instituições, veículos e equipe. Liberar funcionários na política de acesso da hospedagem, além de cadastrar o perfil interno. O login atual usa a autenticação ChatGPT fornecida pelo Sites.
-8. Confirmar a propriedade de postovn.com.br e conectar o domínio na hospedagem com os registros DNS fornecidos. O domínio ainda não foi conectado.
+1. **Primeiro administrador.** Com o banco vazio, a tela de login do administrador mostra o formulário de criação da primeira conta (`POST /api/setup`). A rota recusa a criação quando já existe qualquer conta.
+2. **Convidar alguém.** Em Equipe e acessos, o administrador informa nome, e-mail e perfil. A conta é criada sem senha e o sistema mostra o link de convite, que pode ser copiado ou enviado pelo WhatsApp.
+3. **Aceite do convite.** A pessoa abre `/convite?token=…`, cria a senha e já pode entrar. O banco guarda só o hash do token. O link expira em 3 horas, deixa de valer quando é usado e é cancelado se outro for gerado para a mesma pessoa. Aceitar o convite encerra sessões anteriores da conta.
+4. **Novo link.** Para quem perdeu o convite ou precisa redefinir o acesso, a ação "Gerar link" na lista da equipe cria um novo convite.
+5. **Esqueci minha senha.** Envia um link por e-mail (Resend), válido por 1 hora. Redefinir a senha encerra as sessões abertas.
+6. **Desativar.** Editar o membro e mudar Acesso para Desativado bloqueia o login e as chamadas à API.
+
+A situação de cada membro aparece na lista: Ativo, Convite pendente (com horário de validade), Convite expirado ou Desativado. Um administrador não consegue remover o próprio perfil de administrador.
+
+## Banco de dados
+
+- `entries`: cadastros, abastecimentos, movimentos da Oficina e auditoria, com os dados em JSON e o tipo em `kind`.
+- `workshop_counters`: saldos de estoque e pendências de planejamento em milésimos, com `CHECK (units >= 0)`.
+- `invite`: convites (hash do token, validade, uso e cancelamento).
+- `user`, `session`, `account`, `verification`: tabelas do Better Auth.
+
+Migrações em `drizzle/` (`0000` autenticação e entries, `0001` Oficina, `0002` convites), aplicadas com `pnpm db:migrate`.
 
 ## Operação mensal
 
-O frentista seleciona veículo e combustível, informa litros, data e odômetro e salva. A instituição é obtida do cadastro do veículo e o preço vem do cadastro administrativo. No fechamento mensal, o administrador seleciona mês e instituição, confere os totais, exporta CSV ou imprime em PDF.
+O colaborador abre "Novo abastecimento", seleciona veículo e combustível, informa litros, odômetro e data e salva. A instituição vem do cadastro do veículo e o preço vem do cadastro de combustíveis. O formulário guarda um rascunho no aparelho caso a conexão caia antes do envio, mas o lançamento só é gravado com internet. A confirmação mostra o valor efetivamente salvo pelo servidor.
 
-Os contratos nesta versão registram instituição, pessoa/veículo opcional e vigência. Não aplicam limites de crédito, bloqueios automáticos ou regras contratuais ao abastecimento. O relatório é gerado sob demanda; não existe envio automático no fim do mês.
+No fechamento mensal, o administrador seleciona mês e instituição, confere os totais e exporta CSV ou imprime em PDF.
 
-## Área do frentista vinculada
+Os contratos nesta versão registram instituição, pessoa/veículo opcional e vigência. Não aplicam limites de crédito, bloqueios automáticos ou regras contratuais ao abastecimento. O relatório é gerado sob demanda; não há envio automático no fim do mês.
 
-- `/frentista`: formulário dedicado e histórico da própria conta, com dados limitados no servidor mesmo em prévia pelo administrador.
-- `/`: gestão; contas de frentista são encaminhadas à sua área.
-- Ambas as áreas usam o mesmo banco D1. A gestão consulta novos registros a cada 5 segundos enquanto a aba está visível e ao retomar o foco.
-- Requer conexão à internet. A confirmação é exibida após a gravação e usa o preço efetivamente salvo pelo servidor.
-- A hospedagem permanece privada. Funcionários precisam de cadastro interno com perfil frentista e liberação na política de acesso Sites antes de abrir o endereço.
+## Área do colaborador
 
-## Oficina
+- `/frentista`: Início, Meus lançamentos e Oficina. No celular, uma barra inferior dá acesso às mesmas seções e ao botão Lançar.
+- O servidor só envia ao colaborador os cadastros necessários para lançar (instituições, veículos, combustíveis), a Oficina e os abastecimentos da própria conta, mesmo quando a área é aberta por um administrador.
+- O colaborador pode cadastrar peças, registrar entradas, planejar uso e registrar entregas. Não altera preços, cadastros administrativos ou equipe, nem consulta o fechamento mensal.
 
-Novo menu administrativo com estoque de peças, entradas e saídas, uso previsto por veículo e peças efetivamente entregues. A saída identifica quem recebeu e baixa o estoque de forma atômica. Consulte `docs/03-modulo-oficina.md` para as regras completas.
+## Pendências
 
-Depois da 0000, aplique a migração `drizzle/0001_same_steel_serpent.sql` com `pnpm db:migrate`, que cria a tabela `workshop_counters` no Postgres.
-
-## Acesso unificado do operador
-
-A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
-
-Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.
-
-## Placa do veículo de destino
-
-Ao planejar ou registrar a saída de uma peça, a placa do veículo de destino é obrigatória e selecionada entre os veículos cadastrados. O formulário destaca a placa e o modelo antes da confirmação. As consultas de uso previsto, peças recebidas e movimentações identificam explicitamente a placa de destino; o estoque mostra as placas com uso previsto pendente. As exportações CSV incluem a placa e, nas movimentações, o modelo do veículo em colunas separadas. A identificação histórica já registrada no banco é preservada.
+1. Verificar um domínio de envio no Resend e configurar `RESEND_API_KEY` e `EMAIL_FROM` na Vercel. Sem isso, a recuperação de senha não funciona em produção (os convites não dependem de e-mail).
+2. Antes do uso real, remover as contas e os dados de teste do banco para que o primeiro acesso crie o administrador do posto.
+3. Conectar o domínio próprio, se desejado.

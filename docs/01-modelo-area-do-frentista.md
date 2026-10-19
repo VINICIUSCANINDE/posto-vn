@@ -1,21 +1,20 @@
-# CONTROLE TRANSPORTE — MODELO DA ÁREA DO FRENTISTA
+# Controle de Transporte — MODELO DA ÁREA DO COLABORADOR
 ## Documento para desenvolvimento
 
 ### Objetivo
-Criar uma área exclusiva, acessada pelo navegador no celular, tablet ou computador, para o frentista registrar abastecimentos. Cada registro deve ser gravado no mesmo banco de dados utilizado pelo painel de gestão e aparecer automaticamente para o administrador.
+Criar uma área exclusiva, acessada pelo navegador no celular, tablet ou computador, para o colaborador registrar abastecimentos. Cada registro deve ser gravado no mesmo banco de dados utilizado pelo painel de gestão e aparecer automaticamente para o administrador.
 
 ### Identidade e endereço
-- Nome: CONTROLE TRANSPORTE — Área do Frentista.
+- Nome: Controle de Transporte — Área do Colaborador.
 - Identidade visual: verde escuro, branco e verde claro, seguindo o painel de gestão.
 - Priorizar facilidade de uso no celular, com campos legíveis e botões grandes.
 - Endereço sugerido após configuração do domínio: postovn.com.br/frentista. Esse endereço é uma proposta, ainda não conectado.
-- Referência publicada: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/frentista
 
 ### Tela 1 — Entrada
 - Acesso individual por funcionário.
 - Somente contas cadastradas e autorizadas pela administração podem entrar.
 - Exibir o nome do funcionário conectado e a opção Sair.
-- A versão atual utiliza autenticação pelo ChatGPT. Caso seja substituída por login próprio, implementar autenticação segura e manter as permissões por perfil no servidor.
+- Login próprio por e-mail e senha (Better Auth), com contas criadas pelo administrador por link de convite e permissões por perfil verificadas no servidor.
 - Não usar uma senha compartilhada por todos os funcionários.
 
 ### Tela 2 — Novo abastecimento
@@ -24,14 +23,14 @@ Apresentar os seguintes campos:
 | Campo | Regra |
 | --- | --- |
 | Veículo / placa | Obrigatório. Selecionar entre os veículos cadastrados pela administração. |
-| Instituição | Preenchida automaticamente a partir do veículo; não editável pelo frentista. |
+| Instituição | Preenchida automaticamente a partir do veículo; não editável pelo colaborador. |
 | Combustível | Obrigatório. Selecionar entre os combustíveis cadastrados. |
 | Data | Obrigatória; iniciar com a data atual e impedir datas futuras. |
 | Litros | Obrigatório; valor positivo, com até três casas decimais. |
 | Odômetro em km | Obrigatório; número inteiro, não negativo, com validação contra o histórico. |
 | Motorista | Nome, opcional nesta primeira versão. |
 | Observação | Texto opcional. |
-| Preço por litro | Obtido do cadastro administrativo; não editável pelo frentista. |
+| Preço por litro | Obtido do cadastro administrativo; não editável pelo colaborador. |
 | Valor total | Calculado automaticamente: litros × preço vigente, arredondado para centavos. |
 
 Botão principal: **Salvar e enviar à gestão**.
@@ -51,10 +50,10 @@ Ao salvar:
 - Permitir busca por placa e instituição.
 - Exibir data, placa, veículo, instituição, combustível, litros, odômetro, valor e confirmação de envio.
 - Exibir um resumo dos próprios abastecimentos e veículos atendidos no dia.
-- O frentista não poderá alterar nem excluir abastecimentos já confirmados.
+- O colaborador não poderá alterar nem excluir abastecimentos já confirmados.
 
 ### Permissões
-O frentista não pode acessar relatórios gerais, fechamento mensal, cadastros de clientes/instituições/pessoas/veículos/contratos, gestão de equipe ou alterações de preços. A proteção deve existir no servidor; ocultar botões não é suficiente. Também não pode consultar lançamentos de outros funcionários.
+O colaborador não pode acessar relatórios gerais, fechamento mensal, cadastros de clientes/instituições/pessoas/veículos/contratos, gestão de equipe ou alterações de preços. A proteção deve existir no servidor; ocultar botões não é suficiente. Também não pode consultar lançamentos de outros funcionários.
 
 ### Integração obrigatória com a gestão
 - Usar o mesmo banco de dados e as mesmas regras de negócio do painel administrativo.
@@ -66,19 +65,17 @@ O frentista não pode acessar relatórios gerais, fechamento mensal, cadastros d
 - Falhas de sincronização devem ficar visíveis; não indicar conexão saudável quando a atualização falhar.
 
 ### Critérios de aceite
-- Um frentista autorizado registra um abastecimento e o administrador o vê sem atualizar manualmente a página.
+- Um colaborador autorizado registra um abastecimento e o administrador o vê sem atualizar manualmente a página.
 - Uma alteração posterior de preço não modifica o abastecimento anterior.
-- O frentista não consegue acessar funções administrativas nem dados de outros funcionários, mesmo por requisições diretas.
+- O colaborador não consegue acessar funções administrativas nem dados de outros funcionários, mesmo por requisições diretas.
 - Um lançamento com erro de validação não é gravado.
 - O formulário funciona corretamente no celular.
 
 ### Material existente e limites
-Já existe uma implementação com as duas áreas, banco compartilhado e atualização automática, publicada na plataforma Sites. Há código-fonte disponível no pacote controle-transporte-codigo.zip. Na validação local, passaram 19 verificações de integração; isso não substitui a homologação do desenvolvedor no ambiente escolhido.
+A implementação atual usa Next.js na Vercel, banco Neon Postgres e login próprio; detalhes em `README.md` e `docs/implementacao-atual.md`. Os testes `pnpm test:integracao` (22 verificações) e `pnpm test:oficina` (28 verificações) passam localmente; isso não substitui a homologação no ambiente de produção.
 
 O site está privado. A liberação dos funcionários depende de cadastro interno e autorização na hospedagem. O domínio postovn.com.br ainda não foi conectado. A migração para a plataforma Google foi solicitada pelo cliente, mas não foi executada; o desenvolvedor deverá definir o serviço adequado e adaptar hospedagem, autenticação e banco, caso essa escolha seja mantida.
 
-## Acesso unificado do operador
+## Acesso unificado do colaborador
 
-A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
-
-Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.
+A mesma pessoa registra abastecimentos e controla a Oficina pelo acesso `/frentista` (Área do colaborador), com as seções Início, Meus lançamentos e Oficina. O perfil técnico `attendant` pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.

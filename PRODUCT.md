@@ -31,8 +31,8 @@ Conecta em tempo real o lançamento do colaborador na bomba ao painel do adminis
 
 ## Capabilities and Constraints
 
-- Stack atual: Next.js com Vinext, Cloudflare Workers + D1 (SQLite), autenticação via ChatGPT/Sites (headers `oai-authenticated-user-*`).
-- Hospedagem privada via Sites; domínio próprio `postovn.com.br` ainda não conectado.
+- Stack atual: Next.js 16 na Vercel, Neon Postgres (Drizzle) e login próprio por e-mail e senha (Better Auth), com contas criadas pelo administrador por link de convite de 3 horas e uso único.
+- Domínio próprio `postovn.com.br` ainda não conectado; domínio de envio de e-mail (Resend) ainda não verificado.
 - Sem recebimento online, emissão de nota fiscal ou integração com bombas de combustível, a menos que contratados separadamente.
 - Preço por litro e nome de instituição/veículo são preservados no histórico de cada abastecimento mesmo após o cadastro ser alterado depois.
 - Não existe exclusão de lançamentos; alterações de cadastro geram registro de auditoria.
@@ -40,7 +40,7 @@ Conecta em tempo real o lançamento do colaborador na bomba ao painel do adminis
 
 ## Brand Commitments
 
-- Nome do produto: **Controle de Transporte**. "Posto VN" era o nome usado até aqui (inclusive no código, nos textos da interface e na documentação existente) e precisa ser substituído — ainda não atualizado no código-fonte.
+- Nome do produto: **Controle de Transporte**. "Posto VN" era o nome anterior e já foi substituído na interface e na documentação; não usar a grafia "CONTROLE TRANSPORTE".
 - Paleta: manter as cores já em uso — verde escuro (`#102d26`), verde (`#157255`), verde claro (`#eaf4ed`) sobre branco e fundo `#f5f7f5`. Cinzas e estados podem ser ajustados para atingir contraste AA, sem trocar a família de cor.
 - Direção visual: o padrão da categoria (painel SaaS limpo), executado no nível de acabamento de Stripe Dashboard, Linear e Nubank/Conta Azul — escolha consciente do usuário, sem ironia nem enfeite.
 - O resultado não pode ficar chamativo/infantil (é um sistema de faturamento) nem piorar o lançamento rápido no celular.

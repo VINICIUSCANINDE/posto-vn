@@ -11,7 +11,10 @@
     "start": "next start",
     "lint": "eslint . --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "test:integracao": "node --env-file=.env.local tests/integration.mjs",
+    "test:oficina": "node --env-file=.env.local tests/workshop.mjs",
+    "test": "pnpm test:integracao && pnpm test:oficina"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

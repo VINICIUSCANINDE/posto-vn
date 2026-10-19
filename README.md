@@ -1,57 +1,100 @@
-# Controle de Transporte — sistema completo
+# Controle de Transporte
 
-Código e documentação das duas áreas do sistema de abastecimentos do Controle de Transporte.
+Sistema interno do posto para lançar abastecimentos de veículos de instituições conveniadas, controlar a Oficina (estoque e entrega de peças por veículo) e fechar a cobrança mensal de cada instituição.
 
-## Conteúdo
+Duas áreas, um banco:
 
-- `app/dashboard.tsx`: painel de gestão.
-- `app/frentista/`: área exclusiva do frentista.
-- `app/api/data/`: serviço compartilhado, validações e permissões.
-- `db/` e `drizzle/`: estrutura do banco e migração.
-- `docs/01-modelo-area-do-frentista.md`: especificação para o desenvolvedor.
-- `docs/02-modelo-painel-de-gestao.md`: especificação para o desenvolvedor.
-- `docs/previas/`: imagens das interfaces.
-- `docs/implementacao-atual.md`: funcionamento, testes e pendências.
-- `tests/integration.mjs`: verificações de integração local.
+- **Administração** (`/`): visão geral, abastecimentos, Oficina, cadastros (instituições, veículos, pessoas, contratos), fechamento mensal, combustíveis e preços, equipe e acessos.
+- **Colaborador** (`/frentista`): lançamento rápido de abastecimento pelo celular, histórico da própria conta e Oficina. A rota mantém o nome técnico antigo; na interface o perfil se chama "colaborador".
 
-## Links publicados
+A administração busca novos registros a cada 5 segundos enquanto a aba está visível.
 
-- Gestão: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/
-- Colaborador: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/frentista
+## Stack
 
-Acesso privado na hospedagem Sites. Ambas as áreas utilizam o mesmo banco. A gestão busca novos registros a cada 5 segundos enquanto a aba está visível.
+- Next.js 16 (App Router), React 19 e TypeScript, hospedado na Vercel.
+- Neon Postgres (provisionado pelo Marketplace da Vercel) com Drizzle ORM.
+- Login próprio com e-mail e senha via Better Auth. Não existe cadastro público.
+- E-mail de recuperação de senha via Resend.
+- Interface com componentes próprios (`components/`), Radix Select e animações do React Bits (respeitam "reduzir movimento").
+
+## Estrutura
+
+| Caminho | Conteúdo |
+|---|---|
+| `app/dashboard.tsx` | Painel administrativo |
+| `app/frentista/` | Área do colaborador |
+| `app/workshop.tsx` | Interface da Oficina (usada nas duas áreas) |
+| `app/auth-screens.tsx` | Login por perfil, primeiro acesso, esqueci/redefinir senha e convite |
+| `app/api/data/` | Cadastros, abastecimentos, equipe e permissões |
+| `app/api/workshop/` | Operações da Oficina (transacionais) |
+| `app/api/convite/`, `app/api/setup/` | Aceite de convite e criação do primeiro administrador |
+| `lib/auth.ts`, `lib/permissions.ts` | Configuração do Better Auth e perfis |
+| `lib/invites.ts` | Links de convite |
+| `lib/email.ts` | Envio de e-mail (Resend) |
+| `components/` | Campos, selects, modal, toolbar, link de convite e animações |
+| `db/`, `drizzle/` | Esquema e migrações do banco |
+| `tests/` | Testes de integração e da Oficina |
+| `docs/` | Especificações e regras de negócio |
+
+## Acesso e contas
+
+- **Perfis:** `admin` (administrador) e `attendant` (colaborador). As permissões são sempre verificadas no servidor.
+- **Primeiro acesso:** com o banco vazio, a tela de login do administrador pede para criar a primeira conta de administrador. Depois disso, essa opção some.
+- **Novas contas:** o administrador cadastra nome, e-mail e perfil em **Equipe e acessos** e recebe um **link de convite** para enviar à pessoa (copiar ou WhatsApp). O link vale por **3 horas** e funciona **uma única vez**: quando a pessoa cria a senha, ele deixa de funcionar. Gerar um novo link cancela o anterior.
+- **Esqueci minha senha:** envia por e-mail um link válido por 1 hora. Em desenvolvimento, sem `RESEND_API_KEY`, o link aparece no terminal do servidor.
+- **Desativar conta:** ao editar o membro, mude **Acesso** para "Desativado". A pessoa não consegue mais entrar.
 
 ## Ambiente de desenvolvimento
 
-Implementação atual: Vinext/React, TypeScript, Cloudflare Workers e D1, autenticação fornecida pelo Sites. Use Node.js 24 e pnpm 11.25.0 para reproduzir o ambiente validado.
+Requer Node.js 24 e pnpm 11.
 
-1. Instale as dependências: `pnpm install --frozen-lockfile`.
-2. Verifique tipos: `pnpm exec tsc --noEmit`.
-3. Compile: `pnpm run build`.
-4. Aplique uma única vez a migração ao banco **local**, conforme `docs/implementacao-atual.md` e a documentação do starter:
+1. Instale as dependências: `pnpm install`.
+2. Baixe as variáveis do projeto na Vercel: `vercel env pull .env.local` (o projeto precisa estar vinculado com `vercel link`).
+3. Aplique as migrações pendentes: `pnpm db:migrate`.
+4. Inicie: `pnpm dev` (abre em http://127.0.0.1:3000).
+
+Outros comandos: `pnpm exec tsc --noEmit` (tipos), `pnpm lint`, `pnpm build`, `pnpm db:generate` (gera migração depois de alterar `db/schema.ts`).
+
+### Variáveis de ambiente
+
+| Variável | Uso |
+|---|---|
+| `DATABASE_URL` | Conexão do app com o Neon (pool) |
+| `DATABASE_URL_UNPOOLED` | Conexão direta, usada nas migrações e nos testes |
+| `BETTER_AUTH_SECRET` | Segredo das sessões (obrigatório, nunca versionar) |
+| `BETTER_AUTH_URL` | URL pública do app; na Vercel, se ausente, usa a URL de produção do projeto |
+| `RESEND_API_KEY` | Envio de e-mail; obrigatória em produção |
+| `EMAIL_FROM` | Remetente dos e-mails, de um domínio verificado no Resend (sem ela, usa o remetente de teste `onboarding@resend.dev`, que só entrega para o dono da conta Resend) |
+
+`.env.local` está no `.gitignore` e não deve ser versionado.
+
+## Testes
+
+Com o servidor rodando (`pnpm dev`), em outro terminal:
 
 ```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_redundant_weapon_omega.sql
+pnpm test              # os dois conjuntos
+pnpm test:integracao   # login, abastecimentos e permissões (22 verificações)
+pnpm test:oficina      # estoque, planejamento, entregas e concorrência (28 verificações)
 ```
 
-5. Inicie: `pnpm run dev`.
-6. Com o servidor local na porta 5173 e o banco de desenvolvimento disponível, execute em outro terminal: `node tests/integration.mjs`.
+Os testes entram com as contas de teste (`TEST_ADMIN_EMAIL`/`TEST_ADMIN_PASSWORD` e `TEST_COLAB_EMAIL`/`TEST_COLAB_PASSWORD`, com padrão nas contas locais), criam registros fictícios e, ao final, removem só o que criaram. **Rode apenas contra um banco de desenvolvimento**, nunca contra o banco com dados reais.
 
-O teste utiliza autenticação simulada local, cria registros fictícios, verifica permissões e integração e limpa os registros criados. Execute somente em ambiente local de desenvolvimento descartável. Foram aprovadas 19 verificações de integração na versão entregue.
+## Publicação
 
-## Implantação e limites
+A Vercel publica a partir do repositório. Antes da primeira publicação para uso real:
 
-- A configuração `.openai/hosting.json` identifica a publicação Sites existente; não contém senha ou token. Não criar um novo Site por engano.
-- Este projeto não foi migrado ao Google. Essa migração exige adaptar aplicação, autenticação e banco.
-- O domínio postovn.com.br ainda não está conectado.
-- Cadastros e acesso de funcionários precisam ser configurados antes do uso pela equipe.
-- Nenhum dado real de clientes, abastecimentos, banco local ou credencial de acesso faz parte desta entrega.
-- Publicar o código no GitHub não publica automaticamente a aplicação nem migra o banco.
+1. Garanta que `BETTER_AUTH_SECRET`, `RESEND_API_KEY` e `EMAIL_FROM` estão configuradas no ambiente de produção.
+2. Rode `pnpm db:migrate` contra o banco de produção.
+3. Remova contas e dados de teste para que o primeiro acesso crie o administrador real.
+4. Verifique o domínio de envio no Resend (pendente).
 
-Prefira manter este repositório privado e conceder acesso somente aos desenvolvedores responsáveis.
+## Regras de negócio
 
-## Oficina
+- O preço por litro e os nomes de instituição e veículo ficam gravados em cada abastecimento; mudar o cadastro depois não altera o histórico.
+- Abastecimentos não são editados nem apagados. Alterações de cadastro geram registro de auditoria.
+- O odômetro não pode ser menor que o do abastecimento anterior do veículo nem maior que o de um abastecimento posterior.
+- Sem recebimento online, nota fiscal ou integração com bombas.
+- Oficina: estoque nunca negativo, garantido por `CHECK` no banco e baixa em transação. Regras completas em `docs/03-modulo-oficina.md`.
 
-Menu **Oficina** no painel administrativo e aba **Oficina** na área do colaborador (`/frentista`): estoque de peças, entradas, uso previsto por veículo e entregas com identificação de quem recebeu. A saída baixa o estoque dentro de uma transação, e o `CHECK` da tabela `workshop_counters` impede saldo negativo mesmo com envios simultâneos. Colaboradores podem operar a Oficina, mas continuam sem acesso a preços, cadastros administrativos, equipe e relatórios. Regras completas em `docs/03-modulo-oficina.md`.
-
-Para atualizar um banco existente, rode `pnpm db:migrate`, que aplica `drizzle/0001_same_steel_serpent.sql`.
+Detalhes de funcionamento em `docs/implementacao-atual.md`.

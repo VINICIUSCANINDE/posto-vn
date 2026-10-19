@@ -1,7 +1,7 @@
-# CONTROLE TRANSPORTE — Módulo Oficina
+# Controle de Transporte — Módulo Oficina
 
 ## Navegação
-Acesso pelo menu Oficina no painel administrativo, com quatro abas:
+Acesso pelo menu Oficina no painel administrativo e na área do colaborador, com quatro abas:
 - Estoque: peças, códigos, unidade, saldo, mínimo e uso previsto pendente.
 - Entradas e saídas: histórico de movimentações, fornecedor/documento ou veículo/recebedor.
 - Uso previsto: peças necessárias por veículo, quantidade prevista, entregue e pendente.
@@ -17,7 +17,7 @@ Acesso pelo menu Oficina no painel administrativo, com quatro abas:
 As consultas aceitam busca por peça, código, placa ou recebedor, filtro por veículo nas abas pertinentes e exportação CSV da consulta atual.
 
 ## Regras
-- Disponível para administradores e operadores de abastecimentos. A mesma conta do operador registra abastecimentos e controla peças, entradas, saídas e entregas pela aba Oficina. Relatórios gerais, preços de combustíveis e gestão de usuários continuam restritos à administração.
+- Disponível para administradores e colaboradores. A mesma conta do colaborador registra abastecimentos e controla peças, entradas, saídas e entregas pela aba Oficina. Relatórios gerais, preços de combustíveis e gestão de usuários continuam restritos à administração.
 - Quantidades positivas, com até três casas decimais. Códigos de peças não se repetem no cadastro normal.
 - Não permitir estoque negativo ou entrega acima da pendência de um planejamento.
 - Validar que a peça e o veículo correspondem ao planejamento escolhido.
@@ -31,10 +31,10 @@ As consultas aceitam busca por peça, código, placa ou recebedor, filtro por ve
 
 Os saldos são inteiros em milésimos. Gravação de saída, baixa no estoque e atualização da pendência ocorrem em uma transação de banco. A restrição de saldo não negativo reverte toda a operação em caso de disputa pelo mesmo estoque.
 
-Na instalação local, aplicar a migração 0000 e depois a 0001, sem reaplicar migrações já executadas. Na publicação Sites, o fluxo aplica as migrações pendentes no ambiente hospedado.
+`pnpm db:migrate` aplica as migrações pendentes, sem reaplicar as já executadas, tanto no banco local quanto no de produção.
 
 ## Validação
-Compilação e TypeScript aprovados. Foram aprovadas 27 verificações específicas da Oficina, incluindo saída acima do saldo, entrega parcial e completa, veículo incorreto, recebedor obrigatório, saídas simultâneas, reversão da operação recusada, quantidades fracionárias e permissões do operador sem acesso administrativo. Os 19 testes anteriores dos abastecimentos também passaram. Os registros fictícios foram removidos do banco local após os testes.
+`pnpm test:oficina` (com `pnpm dev` rodando) executa 28 verificações pela API real, com login de administrador e de colaborador: saída acima do saldo, entrega parcial e completa, veículo incorreto, recebedor obrigatório, data futura, saídas simultâneas, reversão da operação recusada, quantidades fracionárias, origem externa e permissões do colaborador sem acesso administrativo. O teste remove ao final só os registros que criou.
 
 ## Placa do veículo de destino
 
