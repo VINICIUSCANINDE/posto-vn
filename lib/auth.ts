@@ -10,11 +10,13 @@ import { ac, roles } from './permissions';
 const vercelOrigins = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
   .filter(Boolean)
   .map((host) => `https://${host}`);
+// Endereços públicos fixos: o domínio próprio e o alias .vercel.app continuam aceitos lado a lado.
+const productionOrigins = ['https://gestaotransportece.com.br', 'https://www.gestaotransportece.com.br', 'https://controle-de-transporte-one.vercel.app'];
 
 export const auth = betterAuth({
   appName: 'Controle de Transporte',
   baseURL: process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined),
-  trustedOrigins: ['http://127.0.0.1:3000', 'http://localhost:3000', ...vercelOrigins],
+  trustedOrigins: ['http://127.0.0.1:3000', 'http://localhost:3000', ...productionOrigins, ...vercelOrigins],
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   emailAndPassword: {
     enabled: true,

@@ -82,7 +82,7 @@ Os testes entram com as contas de teste (`TEST_ADMIN_EMAIL`/`TEST_ADMIN_PASSWORD
 
 ## Publicação
 
-Produção: https://controle-de-transporte-one.vercel.app
+Produção: https://gestaotransportece.com.br (também em https://controle-de-transporte-one.vercel.app)
 
 O projeto da Vercel está conectado a `VINICIUSCANINDE/posto-vn`:
 
