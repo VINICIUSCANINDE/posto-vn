@@ -4,6 +4,7 @@ import { db } from '../../../db';
 import { account, entries, invite, user as users, workshopCounters } from '../../../db/schema';
 import { appOrigin, createInvite } from '../../../lib/invites';
 import { auth } from '../../../lib/auth';
+import { consumption } from '../../../lib/consumption';
 import { getCurrentUser, json, sameOrigin } from '../../../lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
     const data = all
       .filter((r) => r.kind !== 'audit' && r.kind !== 'member' && (admin || shared.includes(r.kind) || (r.kind === 'fill' && r.actorId === current.id)))
       .map((r) => r.kind === 'institution' && !admin ? { id: r.id, kind: r.kind, name: r.name }
-        : r.kind === 'vehicle' && !admin ? { id: r.id, kind: r.kind, name: r.name, plate: r.plate, institutionId: r.institutionId, lastKm: lastKm[r.id] }
+        : r.kind === 'vehicle' && !admin ? { id: r.id, kind: r.kind, name: r.name, plate: r.plate, institutionId: r.institutionId, kmPerLiter: r.kmPerLiter, lastKm: lastKm[r.id] }
         : r.kind === 'vehicle' ? { ...r, lastKm: lastKm[r.id] }
         : r);
     if (admin) data.push(...(await listMembers()));
@@ -127,12 +128,19 @@ export async function POST(req: Request) {
         fuel: fuel.name, priceCents: fuel.priceCents, liters, km, date, driver: str('driver'), note: str('note'),
         totalCents: Math.round(liters * fuel.priceCents), actorId: current.id, attendant: current.name,
       };
+      // Registra a média do trecho para o controle de consumo; o primeiro abastecimento do veículo não tem trecho.
+      const avg = consumption(before?.km, km, liters, vehicle.kmPerLiter);
+      if (avg) {
+        const { status, ...figures } = avg;
+        v = { ...v, previousKm: before!.km, ...figures, consumption: status };
+      }
     } else {
       v = { name: str('name') };
       if (!v.name) return fail('Informe o nome.');
       if (kind === 'institution' || kind === 'person') v = { ...v, document: str('document'), contact: str('contact') };
       if (kind === 'vehicle') {
-        v = { ...v, plate: str('plate').toUpperCase().replace(/[^A-Z0-9]/g, ''), institutionId: str('institutionId') };
+        v = { ...v, plate: str('plate').toUpperCase().replace(/[^A-Z0-9]/g, ''), institutionId: str('institutionId'), kmPerLiter: Math.round(Number(values.kmPerLiter) * 100) / 100 };
+        if (!Number.isFinite(v.kmPerLiter) || v.kmPerLiter < 0.5 || v.kmPerLiter > 100) return fail('Informe o consumo esperado do veículo, entre 0,5 e 100 km/L.');
         if (!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(v.plate) || !all.some((r) => r.kind === 'institution' && r.id === v.institutionId)) return fail('Informe uma placa válida e a instituição.');
         if (all.some((r) => r.kind === 'vehicle' && r.plate === v.plate && r.id !== id)) return fail('Esta placa já está cadastrada.');
       }

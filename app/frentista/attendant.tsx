@@ -8,6 +8,7 @@ import { Dialog } from '../../components/dialog';
 import { Input, OptionCards, SearchInput, Select } from '../../components/form';
 import { Toolbar } from '../../components/toolbar';
 import { authClient } from '../../lib/auth-client';
+import { ConsumptionPreview, OdometerBadge } from '../../components/consumption';
 import Workshop from '../workshop';
 
 const DRAFT_KEY = 'controle-transporte:rascunho';
@@ -354,8 +355,9 @@ export default function Attendant() {
                   <Input {...bind('km')} label="Odômetro (km)" type="text" inputMode="numeric" autoComplete="off"
                     value={kmDigits ? num(Number(kmDigits), 0) : ''} onValueChange={(v) => field('km', v.replace(/\D/g, '').slice(0, 7))}
                     placeholder="Ex.: 42.500"
-                    hint={vehicle?.lastKm != null ? `Último registro: ${num(vehicle.lastKm, 0)} km` : undefined} />
+                    hint={vehicle ? <OdometerBadge km={vehicle.lastKm} /> : undefined} />
                 </div>
+                <ConsumptionPreview vehicle={vehicle} km={Number(kmDigits)} liters={Number(form.liters)} />
                 <Input {...bind('date')} label="Data" type="date" max={today()} />
                 <details className="extras" open={Boolean(form.driver || form.note) || undefined}>
                   <summary>Motorista e observação <span className="optional">(opcional)</span></summary>

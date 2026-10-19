@@ -7,11 +7,12 @@ import {
 import { request, RequestError, type Row, money, num, today, dateBR, monthLabel, recentMonths, collectErrors, focusField } from './request';
 import { Card, Counter, Reveal } from '../components/brand';
 import { Dialog } from '../components/dialog';
-import { InlineSelect, Input, SearchInput, Select } from '../components/form';
+import { InlineSelect, Input, OptionCards, SearchInput, Select } from '../components/form';
 import { Toolbar } from '../components/toolbar';
 import { InviteLink } from '../components/invite-link';
 import { authClient } from '../lib/auth-client';
 import Workshop from './workshop';
+import { ConsumptionPreview, ConsumptionTag, OdometerBadge } from '../components/consumption';
 
 async function signOut() {
   await authClient.signOut();
@@ -145,7 +146,7 @@ export default function Dashboard() {
     return m;
   }, [data]);
   const rows = (k: string) => byKind[k] ?? [];
-  const inst = rows('institution'), vehicles = rows('vehicle');
+  const inst = rows('institution'), vehicles = rows('vehicle'), fuels = rows('fuel');
   const instById = useMemo(() => new Map((byKind.institution ?? []).map((i) => [i.id, i])), [byKind]);
   const instName = (x: Row) => instById.get(x.institutionId)?.name || x.institution;
 
@@ -180,6 +181,7 @@ export default function Dashboard() {
     setFieldErrors({});
     setFormError('');
     setForm(row ? { ...row, price: row.priceCents != null ? row.priceCents / 100 : undefined, ...(kind === 'member' ? { password: '', active: row.active ? 'true' : 'false' } : {}) }
+      : kind === 'fill' ? { date: today() }
       : kind === 'member' ? { role: 'attendant', active: 'true' }
       : kind === 'contract' ? { start: today(), end: `${today().slice(0, 4)}-12-31` }
       : {});
@@ -208,7 +210,7 @@ export default function Dashboard() {
       document.querySelector<HTMLDialogElement>('dialog[open]')?.close();
       await load(false, true);
       if (res.invite) setInviteResult({ name: String(form.name), ...res.invite });
-      else setToast(modal.id ? 'Alterações salvas.' : `${SINGULAR[modal.kind][0].toUpperCase()}${SINGULAR[modal.kind].slice(1)} cadastrado.`);
+      else setToast(modal.id ? 'Alterações salvas.' : modal.kind === 'fill' ? 'Abastecimento lançado.' : `${SINGULAR[modal.kind][0].toUpperCase()}${SINGULAR[modal.kind].slice(1)} cadastrado.`);
     } catch (err) {
       setFormError((err as RequestError).message);
     } finally {
@@ -236,9 +238,9 @@ export default function Dashboard() {
     const list = institution ? fills : monthFills;
     const esc = (x: unknown) => `"${String(x ?? '').replace(/"/g, '""')}"`;
     const dec = (v: number, d = 2) => v.toFixed(d).replace('.', ',');
-    const header = ['Data', 'Instituição', 'Placa', 'Veículo', 'Motorista', 'Combustível', 'Litros', 'Preço por litro (R$)', 'Total (R$)', 'Odômetro', 'Colaborador'];
-    const body = [...list].reverse().map((x) => [x.date, instName(x), x.plate, x.vehicle, x.driver, x.fuel, String(x.liters).replace('.', ','), dec(x.priceCents / 100), dec(x.totalCents / 100), x.km, x.attendant]);
-    body.push(['TOTAL', '', '', '', '', '', '', '', dec(list.reduce((a, b) => a + b.totalCents, 0) / 100), '', '']);
+    const header = ['Data', 'Instituição', 'Placa', 'Veículo', 'Motorista', 'Combustível', 'Litros', 'Preço por litro (R$)', 'Total (R$)', 'Odômetro', 'Km rodados', 'Média (km/L)', 'Esperado (km/L)', 'Colaborador'];
+    const body = [...list].reverse().map((x) => [x.date, instName(x), x.plate, x.vehicle, x.driver, x.fuel, String(x.liters).replace('.', ','), dec(x.priceCents / 100), dec(x.totalCents / 100), x.km, x.distanceKm ?? '', x.kmPerLiter != null ? dec(x.kmPerLiter) : '', x.expectedKmPerLiter != null ? dec(x.expectedKmPerLiter) : '', x.attendant]);
+    body.push(['TOTAL', '', '', '', '', '', '', '', dec(list.reduce((a, b) => a + b.totalCents, 0) / 100), '', '', '', '', '']);
     const url = URL.createObjectURL(new Blob(['﻿' + [header, ...body].map((r) => r.map(esc).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
@@ -284,6 +286,7 @@ export default function Dashboard() {
             {!compact && <th scope="col" className="num">Preço/L</th>}
             <th scope="col" className="num">Litros</th>
             {!compact && <th scope="col" className="num">Odômetro</th>}
+            {!compact && <th scope="col" className="num">Média</th>}
             {!compact && <th scope="col">Lançado por</th>}
             <th scope="col" className="num total-cell">Total</th>
           </tr>
@@ -299,6 +302,7 @@ export default function Dashboard() {
               {!compact && <td data-label="Preço/L" className="num">{money(x.priceCents)}</td>}
               <td data-label="Litros" className="num">{num(x.liters)} L</td>
               {!compact && <td data-label="Odômetro" className="num">{num(x.km, 0)} km</td>}
+              {!compact && <td data-label="Média" className="num"><ConsumptionTag fill={x} /></td>}
               {!compact && <td data-label="Lançado por" title={x.attendant}>{String(x.attendant || '').split(' ')[0]}</td>}
               <td data-label="Total" className="num strong total-cell">{money(x.totalCents)}</td>
             </tr>
@@ -311,6 +315,7 @@ export default function Dashboard() {
       <Fuel size={28} aria-hidden="true" />
       <h3>{q ? 'Nenhum abastecimento encontrado' : `Nenhum abastecimento em ${monthLabel(month)}`}</h3>
       <p>{q ? 'Confira a placa ou o nome buscado.' : 'Os lançamentos dos colaboradores aparecem aqui automaticamente.'}</p>
+      {!q && <button className="btn btn-primary" onClick={() => open('fill')}><Plus size={16} aria-hidden="true" /> Novo abastecimento</button>}
     </div>
   );
 
@@ -330,6 +335,7 @@ export default function Dashboard() {
       { label: 'Placa', cell: (x) => <span className="plate">{x.plate}</span> },
       { label: 'Modelo', cell: (x) => <span className="strong">{x.name}</span> },
       { label: 'Instituição', cell: (x) => instById.get(x.institutionId)?.name ?? '—' },
+      { label: 'Consumo esperado', num: true, cell: (x) => (x.kmPerLiter ? `${num(x.kmPerLiter, 2)} km/L` : <span className="tag tag-warn">Informar</span>) },
       { label: 'Último km', num: true, cell: (x) => (x.lastKm != null ? `${num(x.lastKm, 0)} km` : '—') },
       { label: 'Abastecimentos no mês', num: true, cell: (x) => fillsPerVehicle[x.id] ?? 0 },
     ],
@@ -365,13 +371,42 @@ export default function Dashboard() {
   const bind = (key: string) => ({ name: key, value: form[key] ?? '', error: fieldErrors[key], onValueChange: (v: string) => set(key, v) });
   const toOptions = (list: Row[], label: (x: Row) => string = (x) => x.name) => list.map((x) => ({ value: x.id, label: label(x) }));
 
-  const modalBody = modal && (
+  const formVehicle = vehicles.find((v) => v.id === form.vehicleId);
+  const formFuel = fuels.find((f) => f.id === form.fuelId);
+  const formTotal = Math.round(Number(form.liters || 0) * (formFuel?.priceCents || 0));
+
+  const modalBody = modal && (modal.kind === 'fill' ? (
+    <>
+      <Select {...bind('vehicleId')} label="Veículo" placeholder="Selecione o veículo" full
+        options={toOptions(vehicles, (x) => `${x.plate} · ${x.name}`)}
+        hint={formVehicle ? `${instById.get(formVehicle.institutionId)?.name ?? 'Sem instituição'}${formVehicle.kmPerLiter ? ` · consumo esperado ${num(formVehicle.kmPerLiter, 2)} km/L` : ''}` : undefined} />
+      <div className="field-full">
+        <OptionCards name="fuelId" label="Combustível" value={form.fuelId ?? ''} error={fieldErrors.fuelId} onValueChange={(v) => set('fuelId', v)}
+          options={fuels.map((f) => ({ value: f.id, label: f.name, detail: `${money(f.priceCents)}/L` }))} />
+      </div>
+      <Input {...bind('liters')} label="Litros" type="number" min={0.001} max={10000} step={0.001} inputMode="decimal" />
+      <Input {...bind('km')} label="Odômetro (km)" type="number" min={0} max={9999999} step={1} inputMode="numeric"
+        placeholder={formVehicle?.lastKm != null ? String(formVehicle.lastKm) : undefined}
+        hint={formVehicle ? <OdometerBadge km={formVehicle.lastKm} /> : undefined} />
+      <ConsumptionPreview vehicle={formVehicle} km={Number(form.km)} liters={Number(form.liters)} />
+      <Input {...bind('date')} label="Data" type="date" max={today()} />
+      <Input {...bind('driver')} label="Motorista" optional maxLength={200} autoComplete="off" />
+      <Input {...bind('note')} label="Observação" optional full maxLength={200} />
+      <div className="form-summary field-full" aria-live="polite">
+        <span>{formFuel ? `${num(Number(form.liters || 0))} L × ${money(formFuel.priceCents)}` : 'O valor é calculado com o preço vigente.'}</span>
+        <strong>{money(formTotal)}</strong>
+      </div>
+      {(!vehicles.length || !fuels.length) && <p className="notice notice-warn field-full">Cadastre ao menos um veículo e um combustível antes de lançar.</p>}
+    </>
+  ) : (
     <>
       <Input {...bind('name')} label={modal.kind === 'vehicle' ? 'Modelo / descrição' : modal.kind === 'contract' ? 'Identificação do contrato' : modal.kind === 'fuel' ? 'Combustível' : 'Nome'}
         maxLength={200} full={modal.kind !== 'vehicle' && modal.kind !== 'member'} />
       {modal.kind === 'vehicle' && <>
         <Input {...bind('plate')} label="Placa" maxLength={8} autoCapitalize="characters" hint="Ex.: ABC1D23 ou ABC1234" />
-        <Select {...bind('institutionId')} label="Instituição" options={toOptions(inst)} full />
+        <Select {...bind('institutionId')} label="Instituição" options={toOptions(inst)} />
+        <Input {...bind('kmPerLiter')} label="Consumo esperado (km/L)" type="number" min={0.5} max={100} step={0.01} inputMode="decimal" placeholder="Ex.: 10,5" />
+        <p className="hint field-full">O consumo esperado é a referência para conferir a média de cada abastecimento deste veículo.</p>
       </>}
       {(modal.kind === 'institution' || modal.kind === 'person') && <>
         <Input {...bind('document')} label={modal.kind === 'institution' ? 'CNPJ / CPF' : 'CPF / documento'} optional />
@@ -401,7 +436,7 @@ export default function Dashboard() {
         <Input {...bind('note')} label="Condições / observações" optional full />
       </>}
     </>
-  );
+  ));
 
   const days = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
   const isCurrentMonth = month === today().slice(0, 7);
@@ -432,7 +467,9 @@ export default function Dashboard() {
       actions={page === 'report' ? <>
         <button className="btn" onClick={() => window.print()} disabled={!fills.length}><Printer size={16} aria-hidden="true" /> Imprimir / PDF</button>
         <button className="btn btn-primary" onClick={exportCsv} disabled={!fills.length}><Download size={16} aria-hidden="true" /> Exportar planilha</button>
-      </> : pageIsKind && page !== 'fill' ? (
+      </> : page === 'overview' || page === 'fill' ? (
+        <button className="btn btn-primary" onClick={() => open('fill')}><Plus size={16} aria-hidden="true" /> Novo abastecimento</button>
+      ) : pageIsKind ? (
         <button className="btn btn-primary" onClick={() => open(listKind)}><Plus size={16} aria-hidden="true" /> Cadastrar {SINGULAR[listKind]}</button>
       ) : undefined}
     >
@@ -690,13 +727,13 @@ export default function Dashboard() {
       )}
 
       {modal && (
-        <Dialog title={modal.id ? `Editar ${SINGULAR[modal.kind]}` : `Cadastrar ${SINGULAR[modal.kind]}`} onClose={() => setModal(null)} busy={busy}>
+        <Dialog title={modal.id ? `Editar ${SINGULAR[modal.kind]}` : modal.kind === 'fill' ? 'Novo abastecimento' : `Cadastrar ${SINGULAR[modal.kind]}`} onClose={() => setModal(null)} busy={busy}>
           <form onSubmit={save} noValidate>
             <fieldset className="form-grid" disabled={busy}>{modalBody}</fieldset>
             {formError && <p role="alert" className="notice notice-error">{formError}</p>}
             <div className="modal-actions">
               <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={busy}>Cancelar</button>
-              <button className="btn btn-primary" disabled={busy}>{busy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Salvando…</> : modal.id ? 'Salvar alterações' : `Salvar ${SINGULAR[modal.kind]}`}</button>
+              <button className="btn btn-primary" disabled={busy}>{busy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Salvando…</> : modal.id ? 'Salvar alterações' : modal.kind === 'fill' ? 'Lançar abastecimento' : `Salvar ${SINGULAR[modal.kind]}`}</button>
             </div>
           </form>
         </Dialog>
