@@ -82,12 +82,15 @@ Os testes entram com as contas de teste (`TEST_ADMIN_EMAIL`/`TEST_ADMIN_PASSWORD
 
 ## Publicação
 
-A Vercel publica a partir do repositório. Antes da primeira publicação para uso real:
+Produção: https://controle-de-transporte-one.vercel.app
 
-1. Garanta que `BETTER_AUTH_SECRET`, `RESEND_API_KEY` e `EMAIL_FROM` estão configuradas no ambiente de produção.
-2. Rode `pnpm db:migrate` contra o banco de produção.
-3. Remova contas e dados de teste para que o primeiro acesso crie o administrador real.
-4. Verifique o domínio de envio no Resend (pendente).
+O projeto da Vercel está conectado a `VINICIUSCANINDE/posto-vn`:
+
+- Push na `main` publica em produção automaticamente.
+- Outras branches e pull requests ganham um link de prévia próprio. As prévias usam o mesmo banco da produção; não teste nelas com dados fictícios.
+- Mudanças em `db/schema.ts` exigem `pnpm db:migrate` contra o banco de produção **antes** do push que depende delas.
+
+Pendente: verificar o domínio de envio no Resend e configurar `RESEND_API_KEY` e `EMAIL_FROM` na Vercel.
 
 ## Regras de negócio
 
