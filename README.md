@@ -1,6 +1,6 @@
-# CONTROLE TRANSPORTE — sistema completo
+# Controle de Transporte — sistema completo
 
-Código e documentação das duas áreas do sistema de abastecimentos do CONTROLE TRANSPORTE.
+Código e documentação das duas áreas do sistema de abastecimentos do Controle de Transporte.
 
 ## Conteúdo
 
@@ -17,7 +17,7 @@ Código e documentação das duas áreas do sistema de abastecimentos do CONTROL
 ## Links publicados
 
 - Gestão: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/
-- Frentista: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/frentista
+- Colaborador: https://posto-vn-gestao.viniciuscaninde15.chatgpt.site/frentista
 
 Acesso privado na hospedagem Sites. Ambas as áreas utilizam o mesmo banco. A gestão busca novos registros a cada 5 segundos enquanto a aba está visível.
 
@@ -52,16 +52,6 @@ Prefira manter este repositório privado e conceder acesso somente aos desenvolv
 
 ## Oficina
 
-Novo menu administrativo com estoque de peças, entradas e saídas, uso previsto por veículo e peças efetivamente entregues. A saída identifica quem recebeu e baixa o estoque de forma atômica. Consulte `docs/03-modulo-oficina.md` para as regras completas.
+Menu **Oficina** no painel administrativo e aba **Oficina** na área do colaborador (`/frentista`): estoque de peças, entradas, uso previsto por veículo e entregas com identificação de quem recebeu. A saída baixa o estoque dentro de uma transação, e o `CHECK` da tabela `workshop_counters` impede saldo negativo mesmo com envios simultâneos. Colaboradores podem operar a Oficina, mas continuam sem acesso a preços, cadastros administrativos, equipe e relatórios. Regras completas em `docs/03-modulo-oficina.md`.
 
-A instalação local agora também exige a migração `drizzle/0001_blue_giant_man.sql`, depois da 0000, usando o mesmo comando de migração e sem reaplicar arquivos já executados. Os testes específicos da Oficina estão em `tests/workshop.mjs` (executar com o servidor local aberto: `node tests/workshop.mjs`). Foram aprovados 21 testes da Oficina e 19 dos abastecimentos, totalizando 40 verificações de integração.
-
-## Acesso unificado do operador
-
-A mesma pessoa pode registrar abastecimentos e controlar a Oficina usando o acesso `/frentista`. A interface agora se chama Área do Operador e possui as abas Novo abastecimento, Meus lançamentos e Oficina. O perfil técnico `attendant` foi mantido para compatibilidade dos usuários existentes e agora pode cadastrar peças, registrar entradas, planejar uso por veículo e registrar entregas. Não pode alterar preços de combustíveis, cadastros administrativos ou usuários, nem consultar relatórios gerais. O servidor aplica as mesmas restrições.
-
-Validação atual: 19 verificações de abastecimentos e 27 de Oficina, totalizando 46 verificações locais aprovadas.
-
-## Placa do veículo de destino
-
-Ao planejar ou registrar a saída de uma peça, a placa do veículo de destino é obrigatória e selecionada entre os veículos cadastrados. O formulário destaca a placa e o modelo antes da confirmação. As consultas de uso previsto, peças recebidas e movimentações identificam explicitamente a placa de destino; o estoque mostra as placas com uso previsto pendente. As exportações CSV incluem a placa e, nas movimentações, o modelo do veículo em colunas separadas. A identificação histórica já registrada no banco é preservada.
+Para atualizar um banco existente, rode `pnpm db:migrate`, que aplica `drizzle/0001_same_steel_serpent.sql`.

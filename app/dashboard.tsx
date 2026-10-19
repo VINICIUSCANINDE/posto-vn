@@ -1,39 +1,705 @@
 'use client';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import {
+  Fuel, LayoutDashboard, Building2, Car, Users, FileText, Settings, Plus, ArrowUpRight, Download, X,
+  LogOut, ShieldCheck, CheckCircle2, Menu, ClipboardList, RefreshCw, Printer, Pencil, ChevronLeft, Wrench, Link2,
+} from 'lucide-react';
+import { request, RequestError, type Row, money, num, today, dateBR, monthLabel, recentMonths, collectErrors, focusField } from './request';
+import { Card, Counter, Reveal } from '../components/brand';
+import { Dialog } from '../components/dialog';
+import { InlineSelect, Input, SearchInput, Select } from '../components/form';
+import { Toolbar } from '../components/toolbar';
+import { InviteLink } from '../components/invite-link';
+import { authClient } from '../lib/auth-client';
 import Workshop from './workshop';
-import {useEffect,useState,useCallback} from 'react';
-import {Fuel,LayoutDashboard,Building2,Car,Users,FileText,Settings,Plus,ArrowUpRight,Download,Search,X,ChevronRight,LogOut,ShieldCheck,CheckCircle2,Menu,ClipboardList,Wrench} from 'lucide-react';
-type Row=Record<string,any>;
-const money=(v:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v/100);
-const num=(v:number)=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:3}).format(v);
-const today=()=>new Date(Date.now()-3*3600000).toISOString().slice(0,10);
-const titles:Row={overview:'Visão geral',fill:'Abastecimentos',institution:'Instituições',vehicle:'Veículos',person:'Pessoas',contract:'Contratos',report:'Fechamento mensal',fuel:'Combustíveis e preços',member:'Equipe e acessos',workshop:'Oficina'};
-const singular:Row={fill:'abastecimento',institution:'instituição',vehicle:'veículo',person:'pessoa',contract:'contrato',fuel:'combustível',member:'membro da equipe'};
-const icons:Row={overview:LayoutDashboard,fill:Fuel,institution:Building2,vehicle:Car,person:Users,contract:FileText,report:ClipboardList,fuel:Settings,member:ShieldCheck,workshop:Wrench};
-export default function Dashboard(){
- const [data,setData]=useState<Row[]>([]),[user,setUser]=useState<Row|null>(null),[page,setPage]=useState('overview'),[month,setMonth]=useState(today().slice(0,7)),[institution,setInstitution]=useState(''),[search,setSearch]=useState(''),[modal,setModal]=useState<Row|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loading,setLoading]=useState(true),[toast,setToast]=useState(''),[mobile,setMobile]=useState(false),[form,setForm]=useState<Row>({});
- const [syncError,setSyncError]=useState(''),[lastSync,setLastSync]=useState('');
- const load=useCallback(async (quiet=false)=>{try{const res=await fetch('/api/data',{cache:'no-store'});const result=await res.json() as Row;if(!res.ok)throw new Error(result.error);setData(result.data);setUser(result.user);if(result.user.role!=='admin'){window.location.replace('/frentista');return;}setSyncError('');setLastSync(new Date().toLocaleTimeString('pt-BR'));if(!quiet)setError('');}catch(e:any){setSyncError(e.message||'Falha de conexão.');if(!quiet)setError(e.message||'Falha de conexão.');}finally{setLoading(false)}},[])
- useEffect(()=>{void load();const refresh=()=>{if(document.visibilityState==='visible')void load(true)};const timer=setInterval(refresh,5000);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}},[load]);
- useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(''),4500);return()=>clearTimeout(t)}},[toast]);
- const admin=user?.role==='admin';const rows=(kind:string)=>data.filter(x=>x.kind===kind);const inst=rows('institution'),vehicles=rows('vehicle'),fuels=rows('fuel');
- const fills=rows('fill').filter(x=>x.date?.startsWith(month)&&(!institution||x.institutionId===institution)).sort((a,b)=>b.date.localeCompare(a.date)||b.created.localeCompare(a.created));
- const filtered=fills.filter(x=>`${x.plate} ${x.vehicle} ${x.institution} ${x.driver}`.toLowerCase().includes(search.toLowerCase()));
- const total=fills.reduce((a,b)=>a+b.totalCents,0),liters=fills.reduce((a,b)=>a+b.liters,0);
- const groups=Array.from(new Set(fills.map(x=>x.institutionId))).map(id=>{const rs=fills.filter(x=>x.institutionId===id);return{id,name:rs[0].institution,total:rs.reduce((a,b)=>a+b.totalCents,0),liters:rs.reduce((a,b)=>a+b.liters,0),cars:new Set(rs.map(x=>x.plate)).size,count:rs.length}}).sort((a,b)=>b.total-a.total);
- function go(p:string){setPage(p);setSearch('');setMobile(false)}
- function open(kind:string,row?:Row){setError('');setForm(row?{...row,price:row.priceCents/100}:{date:today(),role:'attendant',start:today(),end:today().slice(0,4)+'-12-31'});setModal({kind,id:row?.id})}
- async function save(e:React.FormEvent){e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...modal,values:form})});const j=await r.json() as Row;if(!r.ok)throw new Error(j.error);setModal(null);await load();setToast('Registro salvo com sucesso.')}catch(e:any){setError(e.message)}finally{setBusy(false)}}
- function csv(){const escape=(x:any)=>'"'+String(x??'').replace(/"/g,'""')+'"';const header=['Data','Instituição','Placa','Veículo','Motorista','Combustível','Litros','Preço por litro (R$)','Total (R$)','Odômetro','Frentista'];const values=filtered.map(x=>[x.date,x.institution,x.plate,x.vehicle,x.driver,x.fuel,String(x.liters).replace('.',','),(x.priceCents/100).toFixed(2).replace('.',','),(x.totalCents/100).toFixed(2).replace('.',','),x.km,x.attendant]);values.push(['TOTAL','','','','','','','',(filtered.reduce((a,b)=>a+b.totalCents,0)/100).toFixed(2).replace('.',','),'','']);const url=URL.createObjectURL(new Blob(['\uFEFF'+[header,...values].map(r=>r.map(escape).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`controle-transporte-fechamento-${month}.csv`;a.click();URL.revokeObjectURL(url)}
- const input=(key:string,label:string,type='text',required=true)=><label>{label}<input type={type} required={required} value={form[key]??''} onChange={e=>setForm({...form,[key]:e.target.value})} {...(type==='number'?{min:key==='km'?0:0.001,step:key==='km'?1:key==='price'?0.01:0.001}: {})} {...(key==='date'?{max:today()}: {})}/></label>;
- const select=(key:string,label:string,options:Row[],required=true)=><label>{label}<select required={required} value={form[key]||''} onChange={e=>setForm({...form,[key]:e.target.value,...(key==='institutionId'?{vehicleId:''}:{})})}><option value="">Selecione...</option>{options.map(x=><option key={x.id} value={x.id}>{x.plate?`${x.plate} · `:''}{x.name}</option>)}</select></label>;
- const table=(rs:Row[])=>rs.length?<div className="tablewrap"><table><thead><tr><th>Veículo / placa</th><th>Instituição</th><th>Data</th><th>Combustível</th><th>Litros</th><th>Valor total</th></tr></thead><tbody>{rs.map(x=><tr key={x.id}><td><strong className="plate">{x.plate}</strong><small>{x.vehicle}</small></td><td>{x.institution}<small>{x.driver||'Motorista não informado'}</small></td><td>{x.date.split('-').reverse().join('/')}<small>{x.attendant}</small></td><td><span className="tag">{x.fuel}</span></td><td>{num(x.liters)} L</td><td><strong>{money(x.totalCents)}</strong></td></tr>)}</tbody></table></div>:<div className="empty"><Fuel size={30}/><h3>Nenhum abastecimento neste período</h3><p>Os lançamentos aparecerão aqui, organizados por veículo e instituição.</p><button className="primary" onClick={()=>open('fill')}><Plus size={16}/> Lançar abastecimento</button></div>;
- return <div className="shell"><aside className={mobile?'sidebar show':'sidebar'}><a className="brand" href="/"><span className="brandmark"><Fuel size={25}/></span><span>CONTROLE <b>TRANSPORTE</b><small>GESTÃO DE ABASTECIMENTOS</small></span></a><div className="workspace"><span className="avatar">CT</span><div>CONTROLE TRANSPORTE<small>Gestão da operação</small></div><span className="online"/></div><p className="navlabel">OPERAÇÃO</p><nav>{(admin?['overview','fill','institution','vehicle','person','contract','workshop']:['fill']).map(p=>{const I=icons[p];return <button key={p} className={page===p?'nav active':'nav'} onClick={()=>go(p)}><I size={19}/>{titles[p]}{p==='fill'&&<span className="navcount">{rows('fill').length}</span>}</button>})}</nav>{admin&&<><p className="navlabel">ADMINISTRAÇÃO</p><nav>{['report','fuel','member'].map(p=>{const I=icons[p];return <button key={p} className={page===p?'nav active':'nav'} onClick={()=>go(p)}><I size={19}/>{titles[p]}</button>})}</nav></>}<div className="sidebottom"><div className="secure"><ShieldCheck size={18}/><span>Acesso protegido<small>{admin?'Área administrativa':'Área do frentista'}</small></span></div><div className="profile"><span className="avatar">{admin?'AD':'FR'}</span><span>{user?.name||'Bem-vindo'}<small>{admin?'Administrador':user?'Frentista':'Entre para continuar'}</small></span><a href="/signout-with-chatgpt?return_to=/" target="_top" aria-label="Sair"><LogOut size={17}/></a></div></div></aside><div className="content"><header className="topbar"><div><button className="mobilebutton" aria-label="Abrir menu" onClick={()=>setMobile(!mobile)}><Menu size={22}/></button><span className="crumb">Minha operação</span><ChevronRight size={14}/><strong>{titles[page]}</strong></div><span className="environment"><i/> {user?(syncError?'Atualização interrompida':'Atualização automática · '+lastSync):'Sistema do posto'}</span></header><main><div className="pageheading"><div><div className="eyebrow">{page==='overview'?'SEU TRANSPORTE, EM DIA':admin?'GESTÃO DE TRANSPORTE':'ÁREA DO FRENTISTA'}</div><h1>{titles[page]}</h1><p>{page==='overview'?'Acompanhe sua operação e tenha o controle de cada abastecimento.':page==='workshop'?'Controle as peças em estoque e acompanhe o uso e a entrega para cada veículo.':page==='report'?'Todos os veículos, valores e instituições em um só fechamento.':page==='fill'?'Registre e acompanhe os abastecimentos da frota.':'Organize as informações da sua operação.'}</p></div>{page!=='workshop'&&<button className="primary" onClick={()=>open(['overview','report'].includes(page)?'fill':page)}><Plus size={18}/>{['overview','fill','report'].includes(page)?'Novo abastecimento':`Cadastrar ${singular[page]}`}</button>}</div>
- {user&&<div className="syncstrip"><span>{syncError||'Conectado à área dos frentistas · novos lançamentos aparecem automaticamente em até 5 segundos.'}</span><a href="/frentista">Abrir área do frentista <ArrowUpRight size={14}/></a></div>}{!user&&<div className="notice"><ShieldCheck size={22}/><div><strong>{loading?'Preparando sua área de trabalho…':'Entre para acessar os dados do posto'}</strong><p>{error||'Seus cadastros e lançamentos ficam protegidos e sincronizados.'}</p></div>{!loading&&<a className="primary" href="/signin-with-chatgpt?return_to=/" target="_top">Entrar com ChatGPT <ArrowUpRight size={16}/></a>}</div>}
- {['overview','fill','report'].includes(page)&&<><div className="filters"><div><span className="filterlabel">Período</span><input aria-label="Mês do relatório" type="month" value={month} onChange={e=>setMonth(e.target.value)}/><select aria-label="Filtrar instituição" value={institution} onChange={e=>setInstitution(e.target.value)}><option value="">Todas as instituições</option>{inst.map(x=><option value={x.id} key={x.id}>{x.name}</option>)}</select></div><span className="muted">{admin?'Faturamento mensal':'Seus lançamentos'}</span></div><div className="stats">{[{label:'Valor total no mês',value:money(total),icon:FileText,sub:'A faturar por instituição',accent:true},{label:'Abastecimentos',value:String(fills.length).padStart(2,'0'),icon:Fuel,sub:'Lançamentos no período'},{label:'Volume abastecido',value:num(liters)+' L',icon:ClipboardList,sub:'Combustíveis registrados'},{label:'Veículos atendidos',value:String(new Set(fills.map(x=>x.plate)).size).padStart(2,'0'),icon:Car,sub:`Em ${groups.length} instituições`}].map(s=><div className={s.accent?'stat accent':'stat'} key={s.label}><div><span>{s.label}</span><s.icon size={19}/></div><strong>{s.value}</strong><small>{s.sub}</small></div>)}</div></>}
- {page==='overview'&&<><div className="middle"><section className="panel chartpanel"><div className="panelhead"><div><h2>Abastecimentos no mês</h2><p>Volume diário registrado em litros</p></div><span className="legend"><i/> Litros</span></div><div className="chart"><div className="axis"><span>{num(Math.max(100,...Array.from({length:31},(_,j)=>fills.filter(x=>Number(x.date.slice(-2))===j+1).reduce((a,b)=>a+b.liters,0))))}</span><span>Litros</span><span>0</span></div><div className="bars">{Array.from({length:31},(_,i)=>{const v=fills.filter(x=>Number(x.date.slice(-2))===i+1).reduce((a,b)=>a+b.liters,0);const max=Math.max(1,...Array.from({length:31},(_,j)=>fills.filter(x=>Number(x.date.slice(-2))===j+1).reduce((a,b)=>a+b.liters,0)));return <div className="barcol" key={i} title={`Dia ${i+1}: ${num(v)} L`}><div className="bar" style={{height:v?`${Math.max(3,v/max*100)}%`:'2px',opacity:v?1:0.15}}/><small>{[0,4,9,14,19,24,30].includes(i)?String(i+1).padStart(2,'0'):''}</small></div>})}</div>{!fills.length&&<div className="chartempty">Seu movimento começa no primeiro lançamento.</div>}</div></section><section className="panel institutions"><div className="panelhead"><div><h2>Por instituição</h2><p>Distribuição do faturamento</p></div><Building2 size={19}/></div>{groups.length?groups.slice(0,4).map((g,i)=><div className="instrow" key={g.id}><span className="insticon">{String(i+1).padStart(2,'0')}</span><div><strong>{g.name}</strong><small>{g.cars} veículos · {g.count} abastecimentos</small><div className="meter"><i style={{width:`${g.total/total*100}%`}}/></div></div><b>{money(g.total)}</b></div>):<div className="miniempty"><Building2 size={28}/><p>O total de cada instituição<br/>aparecerá aqui.</p><button className="textbutton" onClick={()=>open('institution')}>Cadastrar instituição <ChevronRight size={14}/></button></div>}<button className="panelbottom" onClick={()=>go('report')}>Ver fechamento mensal <ArrowUpRight size={16}/></button></section></div><section className="panel"><div className="panelhead"><div><h2>Últimos abastecimentos</h2><p>Os registros mais recentes do período selecionado</p></div><button className="textbutton" onClick={()=>go('fill')}>Ver todos <ArrowUpRight size={16}/></button></div>{table(fills.slice(0,5))}</section></>}
- {page==='fill'&&<section className="panel"><div className="panelhead"><div><h2>Registros de abastecimento</h2><p>{filtered.length} lançamentos encontrados</p></div><div className="search"><Search size={17}/><input placeholder="Buscar placa ou instituição" value={search} onChange={e=>setSearch(e.target.value)}/></div></div>{table(filtered)}</section>}
- {page==='report'&&<><section className="reportbanner"><span className="reporticon"><FileText size={28}/></span><div><h2>Fechamento de {new Date(month+'-02T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</h2><p>Confira os totais por instituição e exporte a relação completa de veículos.</p></div><button className="secondary" onClick={csv} disabled={!fills.length}><Download size={17}/> Exportar planilha</button><button className="secondary" onClick={()=>window.print()}>Imprimir / PDF</button></section><section className="panel"><div className="panelhead"><div><h2>Resumo por instituição</h2><p>Valores calculados com os preços de cada abastecimento</p></div></div>{groups.length?<div className="tablewrap"><table><thead><tr><th>Instituição</th><th>Veículos</th><th>Abastecimentos</th><th>Volume</th><th>Total a faturar</th></tr></thead><tbody>{groups.map(g=><tr key={g.id}><td><strong>{g.name}</strong></td><td>{g.cars}</td><td>{g.count}</td><td>{num(g.liters)} L</td><td><strong>{money(g.total)}</strong></td></tr>)}</tbody><tfoot><tr><td colSpan={4}>Total do período</td><td>{money(total)}</td></tr></tfoot></table></div>:<div className="empty"><FileText size={30}/><h3>Ainda não há valores para fechar</h3><p>Selecione um mês com abastecimentos registrados.</p></div>}</section><section className="panel reportdetail"><div className="panelhead"><h2>Relação de veículos e abastecimentos</h2></div>{table(fills)}</section></>}
- {!['overview','fill','report','workshop'].includes(page)&&<section className="panel"><div className="panelhead"><div><h2>{titles[page]}</h2><p>{rows(page).length} registros cadastrados</p></div></div>{page==='member'&&<div className="inlineinfo">O cadastro define a permissão dentro do sistema. O acesso ao site também precisa ser liberado na hospedagem. O site inicia privado para o proprietário.</div>}{page==='fuel'&&<div className="inlineinfo">Novos preços se aplicam aos próximos lançamentos. O histórico mantém o valor original.</div>}{rows(page).length?<div className="recordgrid">{rows(page).map(x=><div className="record" key={x.id}><span className="recordicon">{(()=>{const I=icons[page];return <I size={23}/>})()}</span><div><h3>{x.plate||x.name}</h3>{x.plate&&<p>{x.name}</p>}<p>{page==='fuel'?money(x.priceCents)+' / litro':page==='member'?x.email:x.document||inst.find(i=>i.id===x.institutionId)?.name||x.contact||'Cadastro ativo'}</p>{page==='member'&&<span className="tag">{x.role==='admin'?'Administrador':'Operador'}</span>}{page==='contract'&&<small>Vigência: {x.start} a {x.end}{x.vehicleId&&' · '+vehicles.find(v=>v.id===x.vehicleId)?.plate}</small>}</div>{x.id!=='owner'&&<button className="textbutton" onClick={()=>open(page,x)}>Editar <ChevronRight size={14}/></button>}</div>)}</div>:<div className="empty"><Plus size={30}/><h3>Comece com seu primeiro cadastro</h3><p>{page==='vehicle'?'Cadastre uma instituição antes de vincular seus veículos.':`Adicione ${titles[page].toLowerCase()} para organizar a operação.`}</p><button className="primary" onClick={()=>open(page)}>Cadastrar {singular[page]}</button></div>}</section>}
- {page==='workshop'&&admin&&<Workshop data={data} onRefresh={()=>load(true)}/>}
- <footer><span>CONTROLE TRANSPORTE <b>·</b> Controle que acompanha sua operação.</span><span><ShieldCheck size={14}/> Dados protegidos por perfil de acesso</span></footer></main></div>{toast&&<div className="toast" role="status"><CheckCircle2 size={20}/>{toast}</div>}{modal&&<div className="overlay" onClick={()=>!busy&&setModal(null)}><section className="modal" role="dialog" aria-modal="true" aria-label={`Cadastrar ${singular[modal.kind]}`} onClick={e=>e.stopPropagation()}><div className="modalhead"><div><span className="eyebrow">CONTROLE TRANSPORTE</span><h2>{modal.id?'Editar':'Cadastrar'} {singular[modal.kind]}</h2></div><button aria-label="Fechar" className="iconbutton" onClick={()=>setModal(null)}><X size={22}/></button></div><form onSubmit={save}><div className="formgrid">{modal.kind==='fill'?<>{select('vehicleId','Veículo / placa',vehicles)}{select('fuelId','Combustível',fuels)}{input('date','Data do abastecimento','date')}{input('liters','Quantidade (litros)','number')}{input('km','Odômetro (km)','number')}{input('driver','Nome do motorista','text',false)}<div className="formsummary"><span>{inst.find(x=>x.id===vehicles.find(v=>v.id===form.vehicleId)?.institutionId)?.name||'Instituição vinculada ao veículo'}</span><strong>{money(Math.round(Number(form.liters||0)*(fuels.find(f=>f.id===form.fuelId)?.priceCents||0)))}</strong></div>{input('note','Observação','text',false)}<p className="formhint">O preço é definido pela administração. O valor total será calculado ao salvar.</p></>:<>{input('name',modal.kind==='vehicle'?'Modelo / descrição do veículo':'Nome')}{['institution','person'].includes(modal.kind)&&<>{input('document','CPF / CNPJ','text',false)}{input('contact','Contato','text',false)}</>}{modal.kind==='vehicle'&&<>{input('plate','Placa')}{select('institutionId','Instituição',inst)}</>}{modal.kind==='fuel'&&input('price','Preço por litro (R$)','number')}{modal.kind==='member'&&<>{input('email','E-mail de acesso','email')}<label>Perfil de acesso<select value={form.role} onChange={e=>setForm({...form,role:e.target.value})}><option value="attendant">Operador — abastecimentos e Oficina</option><option value="admin">Administrador — acesso completo</option></select></label></>}{modal.kind==='contract'&&<>{select('institutionId','Instituição',inst)}{select('personId','Pessoa responsável (opcional)',rows('person'),false)}{select('vehicleId','Veículo (opcional)',vehicles.filter(x=>x.institutionId===form.institutionId),false)}{input('start','Início da vigência','date')}{input('end','Fim da vigência','date')}{input('note','Condições / observações','text',false)}</>}</> }</div>{error&&<p role="alert" className="formerror">{error}</p>}<div className="modalactions"><button type="button" className="secondary" onClick={()=>setModal(null)}>Cancelar</button><button className="primary" disabled={busy||!user}>{busy?'Salvando…':'Salvar '+singular[modal.kind]}</button></div>{!user&&<p className="formerror">Entre na sua conta antes de cadastrar.</p>}</form></section></div>}</div>
+
+async function signOut() {
+  await authClient.signOut();
+  window.location.assign('/entrar');
+}
+
+type Page = 'overview' | 'fill' | 'institution' | 'vehicle' | 'person' | 'contract' | 'report' | 'fuel' | 'member' | 'workshop';
+type Kind = Exclude<Page, 'overview' | 'report' | 'workshop'>;
+
+const TITLES: Record<Page, string> = {
+  overview: 'Visão geral', fill: 'Abastecimentos', institution: 'Instituições', vehicle: 'Veículos', person: 'Pessoas',
+  contract: 'Contratos', report: 'Fechamento mensal', fuel: 'Combustíveis e preços', member: 'Equipe e acessos', workshop: 'Oficina',
+};
+const SINGULAR: Record<Kind, string> = {
+  fill: 'abastecimento', institution: 'instituição', vehicle: 'veículo', person: 'pessoa', contract: 'contrato',
+  fuel: 'combustível', member: 'membro da equipe',
+};
+const ICONS = {
+  overview: LayoutDashboard, fill: Fuel, institution: Building2, vehicle: Car, person: Users, contract: FileText,
+  report: ClipboardList, fuel: Settings, member: ShieldCheck, workshop: Wrench,
+};
+const NAV: { label?: string; items: Page[] }[] = [
+  { items: ['overview', 'fill', 'workshop'] },
+  { label: 'Cadastros', items: ['institution', 'vehicle', 'person', 'contract'] },
+  { label: 'Gestão', items: ['report', 'fuel', 'member'] },
+];
+const MONTHS = recentMonths();
+
+function niceScale(max: number) {
+  if (max <= 0) return { top: 100, step: 50 };
+  const raw = max / 3;
+  const pow = 10 ** Math.floor(Math.log10(raw));
+  const n = raw / pow;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * pow;
+  return { top: Math.ceil(max / step) * step, step };
+}
+
+function groupByInstitution(list: Row[], name: (x: Row) => string) {
+  const map = new Map<string, Row[]>();
+  for (const x of list) map.set(x.institutionId, [...(map.get(x.institutionId) ?? []), x]);
+  return Array.from(map, ([id, rs]) => ({
+    id, name: name(rs[0]), rows: rs,
+    total: rs.reduce((a, b) => a + b.totalCents, 0),
+    liters: rs.reduce((a, b) => a + b.liters, 0),
+    cars: new Set(rs.map((x) => x.plate)).size,
+    count: rs.length,
+  })).sort((a, b) => b.total - a.total);
+}
+
+export default function Dashboard() {
+  const [data, setData] = useState<Row[]>([]);
+  const [user, setUser] = useState<Row | null>(null);
+  const [error, setError] = useState('');
+  const [syncError, setSyncError] = useState('');
+  const [lastSync, setLastSync] = useState('');
+  const [page, setPage] = useState<Page>('overview');
+  const [month, setMonth] = useState(today().slice(0, 7));
+  const [institution, setInstitution] = useState('');
+  const [query, setQuery] = useState('');
+  const [navOpen, setNavOpen] = useState(false);
+  const [modal, setModal] = useState<{ kind: Kind; id?: string } | null>(null);
+  const [form, setForm] = useState<Row>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState('');
+  const [inviteResult, setInviteResult] = useState<{ name: string; url: string; expiresAt: string } | null>(null);
+  const [linkBusy, setLinkBusy] = useState('');
+  const inFlight = useRef(false);
+  const latest = useRef(0);
+  const failures = useRef(0);
+
+  const load = useCallback(async (quiet = false, force = false) => {
+    if (inFlight.current && !force) return;
+    const call = ++latest.current;
+    inFlight.current = true;
+    try {
+      const result = await request('/api/data', {}, 8000);
+      if (call !== latest.current) return;
+      failures.current = 0;
+      setData(result.data);
+      setUser(result.user);
+      if (result.user.role !== 'admin') { window.location.replace('/frentista'); return; }
+      setSyncError('');
+      setLastSync(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      if (!quiet) setError('');
+    } catch (e) {
+      const err = e as RequestError;
+      if (err.status === 401) { window.location.assign('/entrar/administrador'); return; }
+      failures.current += 1;
+      setSyncError(err.message);
+      if (!quiet) setError(err.message);
+    } finally {
+      if (call === latest.current) inFlight.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      if (stopped) return;
+      timer = setTimeout(async () => {
+        if (document.visibilityState === 'visible') await load(true);
+        schedule();
+      }, Math.min(30000, 5000 * 2 ** Math.min(failures.current, 3)));
+    };
+    void load().then(schedule);
+    const refresh = () => { if (document.visibilityState === 'visible') void load(true); };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const byKind = useMemo(() => {
+    const m: Record<string, Row[]> = {};
+    for (const r of data) (m[r.kind] ??= []).push(r);
+    return m;
+  }, [data]);
+  const rows = (k: string) => byKind[k] ?? [];
+  const inst = rows('institution'), vehicles = rows('vehicle');
+  const instById = useMemo(() => new Map((byKind.institution ?? []).map((i) => [i.id, i])), [byKind]);
+  const instName = (x: Row) => instById.get(x.institutionId)?.name || x.institution;
+
+  const monthFills = useMemo(
+    () => (byKind.fill ?? []).filter((x) => x.date?.startsWith(month))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.created.localeCompare(a.created)),
+    [byKind, month],
+  );
+  const fills = institution ? monthFills.filter((x) => x.institutionId === institution) : monthFills;
+  const total = fills.reduce((a, b) => a + b.totalCents, 0);
+  const liters = fills.reduce((a, b) => a + b.liters, 0);
+  const groups = groupByInstitution(fills, instName);
+  const monthGroups = groupByInstitution(monthFills, instName);
+  const q = query.trim().toLowerCase();
+  const searchedFills = q ? fills.filter((x) => `${x.plate} ${x.vehicle} ${instName(x)} ${x.driver ?? ''} ${x.attendant ?? ''}`.toLowerCase().includes(q)) : fills;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  function go(p: Page) {
+    setPage(p);
+    setQuery('');
+    setNavOpen(false);
+    document.getElementById('conteudo')?.focus();
+  }
+
+  function open(kind: Kind, row?: Row) {
+    setFieldErrors({});
+    setFormError('');
+    setForm(row ? { ...row, price: row.priceCents != null ? row.priceCents / 100 : undefined, ...(kind === 'member' ? { password: '', active: row.active ? 'true' : 'false' } : {}) }
+      : kind === 'member' ? { role: 'attendant', active: 'true' }
+      : kind === 'contract' ? { start: today(), end: `${today().slice(0, 4)}-12-31` }
+      : {});
+    setModal({ kind, id: row?.id });
+  }
+
+  function set(key: string, value: string) {
+    setForm((f) => ({ ...f, [key]: value, ...(key === 'institutionId' && modal?.kind === 'contract' ? { vehicleId: '' } : {}) }));
+    if (fieldErrors[key]) setFieldErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
+  }
+
+  async function save(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!modal) return;
+    const errors = collectErrors(e.currentTarget);
+    setFieldErrors(errors);
+    const first = Object.keys(errors)[0];
+    if (first) { focusField(e.currentTarget, first); return; }
+    setBusy(true);
+    setFormError('');
+    try {
+      const res = await request('/api/data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: modal.kind, id: modal.id, values: form }),
+      }, 15000);
+      document.querySelector<HTMLDialogElement>('dialog[open]')?.close();
+      await load(false, true);
+      if (res.invite) setInviteResult({ name: String(form.name), ...res.invite });
+      else setToast(modal.id ? 'Alterações salvas.' : `${SINGULAR[modal.kind][0].toUpperCase()}${SINGULAR[modal.kind].slice(1)} cadastrado.`);
+    } catch (err) {
+      setFormError((err as RequestError).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function generateLink(member: Row) {
+    setLinkBusy(member.id);
+    try {
+      const res = await request('/api/data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'member', id: member.id, values: { name: member.name, email: member.email, role: member.role, active: member.active, newInvite: true } }),
+      }, 15000);
+      await load(false, true);
+      if (res.invite) setInviteResult({ name: member.name, ...res.invite });
+    } catch (err) {
+      setToast((err as RequestError).message);
+    } finally {
+      setLinkBusy('');
+    }
+  }
+
+  function exportCsv() {
+    const list = institution ? fills : monthFills;
+    const esc = (x: unknown) => `"${String(x ?? '').replace(/"/g, '""')}"`;
+    const dec = (v: number, d = 2) => v.toFixed(d).replace('.', ',');
+    const header = ['Data', 'Instituição', 'Placa', 'Veículo', 'Motorista', 'Combustível', 'Litros', 'Preço por litro (R$)', 'Total (R$)', 'Odômetro', 'Colaborador'];
+    const body = [...list].reverse().map((x) => [x.date, instName(x), x.plate, x.vehicle, x.driver, x.fuel, String(x.liters).replace('.', ','), dec(x.priceCents / 100), dec(x.totalCents / 100), x.km, x.attendant]);
+    body.push(['TOTAL', '', '', '', '', '', '', '', dec(list.reduce((a, b) => a + b.totalCents, 0) / 100), '', '']);
+    const url = URL.createObjectURL(new Blob(['﻿' + [header, ...body].map((r) => r.map(esc).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `controle-de-transporte-fechamento-${month}${institution ? '-' + (instById.get(institution)?.name ?? '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : ''}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (!user) {
+    return (
+      <main className="loading-screen">
+        {error ? (
+          <div className="loading-card">
+            <p role="alert" className="notice notice-error">{error}</p>
+            <button className="btn" onClick={() => void load()}><RefreshCw size={16} aria-hidden="true" /> Tentar de novo</button>
+          </div>
+        ) : (
+          <p role="status"><RefreshCw className="spin" size={18} aria-hidden="true" /> Carregando o painel…</p>
+        )}
+      </main>
+    );
+  }
+
+  const initials = String(user.name || 'AD').split(/\s+/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const pageIsKind = !['overview', 'report', 'workshop'].includes(page);
+  const listKind = page as Kind;
+
+  const monthSelect = <InlineSelect label="Mês" value={month} onValueChange={setMonth} options={MONTHS.map((m) => ({ value: m, label: monthLabel(m) }))} />;
+  const institutionSelect = <InlineSelect label="Instituição" value={institution} onValueChange={setInstitution} options={[{ value: '', label: 'Todas as instituições' }, ...inst.map((x) => ({ value: x.id, label: x.name }))]} />;
+
+  const fuelTag = (name: string) => <span className="tag">{name}</span>;
+
+  const fillsTable = (list: Row[], compact = false) => list.length ? (
+    <div className="table-wrap">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Data</th>
+            <th scope="col">Placa</th>
+            <th scope="col">Veículo</th>
+            <th scope="col">Instituição</th>
+            <th scope="col">Combustível</th>
+            {!compact && <th scope="col" className="num">Preço/L</th>}
+            <th scope="col" className="num">Litros</th>
+            {!compact && <th scope="col" className="num">Odômetro</th>}
+            {!compact && <th scope="col">Lançado por</th>}
+            <th scope="col" className="num total-cell">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((x) => (
+            <tr key={x.id}>
+              <td data-label="Data">{dateBR(x.date).slice(0, 5)}</td>
+              <td data-label="Placa"><span className="plate">{x.plate}</span></td>
+              <td data-label="Veículo" className="strong">{x.vehicle}{x.driver ? <small>{x.driver}</small> : null}</td>
+              <td data-label="Instituição">{instName(x)}</td>
+              <td data-label="Combustível">{fuelTag(x.fuel)}</td>
+              {!compact && <td data-label="Preço/L" className="num">{money(x.priceCents)}</td>}
+              <td data-label="Litros" className="num">{num(x.liters)} L</td>
+              {!compact && <td data-label="Odômetro" className="num">{num(x.km, 0)} km</td>}
+              {!compact && <td data-label="Lançado por">{x.attendant}</td>}
+              <td data-label="Total" className="num strong total-cell">{money(x.totalCents)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <div className="empty">
+      <Fuel size={28} aria-hidden="true" />
+      <h3>{q ? 'Nenhum abastecimento encontrado' : `Nenhum abastecimento em ${monthLabel(month)}`}</h3>
+      <p>{q ? 'Confira a placa ou o nome buscado.' : 'Os lançamentos dos colaboradores aparecem aqui automaticamente.'}</p>
+    </div>
+  );
+
+  const fillsPerVehicle: Record<string, number> = {};
+  for (const f of monthFills) fillsPerVehicle[f.vehicleId] = (fillsPerVehicle[f.vehicleId] ?? 0) + 1;
+
+  const listColumns: Record<Kind, { label: string; cell: (x: Row) => ReactNode; num?: boolean }[]> = {
+    fill: [],
+    institution: [
+      { label: 'Nome', cell: (x) => <span className="strong">{x.name}</span> },
+      { label: 'CPF / CNPJ', cell: (x) => x.document || '—' },
+      { label: 'Contato', cell: (x) => x.contact || '—' },
+      { label: 'Veículos', num: true, cell: (x) => vehicles.filter((v) => v.institutionId === x.id).length },
+      { label: `Total em ${monthLabel(month).split(' ')[0]}`, num: true, cell: (x) => money(monthFills.filter((f) => f.institutionId === x.id).reduce((a, b) => a + b.totalCents, 0)) },
+    ],
+    vehicle: [
+      { label: 'Placa', cell: (x) => <span className="plate">{x.plate}</span> },
+      { label: 'Modelo', cell: (x) => <span className="strong">{x.name}</span> },
+      { label: 'Instituição', cell: (x) => instById.get(x.institutionId)?.name ?? '—' },
+      { label: 'Último km', num: true, cell: (x) => (x.lastKm != null ? `${num(x.lastKm, 0)} km` : '—') },
+      { label: 'Abastecimentos no mês', num: true, cell: (x) => fillsPerVehicle[x.id] ?? 0 },
+    ],
+    person: [
+      { label: 'Nome', cell: (x) => <span className="strong">{x.name}</span> },
+      { label: 'CPF / documento', cell: (x) => x.document || '—' },
+      { label: 'Contato', cell: (x) => x.contact || '—' },
+    ],
+    contract: [
+      { label: 'Contrato', cell: (x) => <span className="strong">{x.name}</span> },
+      { label: 'Instituição', cell: (x) => instById.get(x.institutionId)?.name ?? '—' },
+      { label: 'Responsável', cell: (x) => rows('person').find((p) => p.id === x.personId)?.name ?? '—' },
+      { label: 'Veículo', cell: (x) => vehicles.find((v) => v.id === x.vehicleId)?.plate ?? 'Todos' },
+      { label: 'Vigência', cell: (x) => `${dateBR(x.start)} a ${dateBR(x.end)}` },
+    ],
+    fuel: [
+      { label: 'Combustível', cell: (x) => <span className="strong">{x.name}</span> },
+      { label: 'Preço por litro', num: true, cell: (x) => money(x.priceCents) },
+    ],
+    member: [
+      { label: 'Nome', cell: (x) => <span className="strong">{x.name || '—'}</span> },
+      { label: 'E-mail', cell: (x) => x.email },
+      { label: 'Perfil', cell: (x) => <span className={x.role === 'admin' ? 'tag tag-brand' : 'tag'}>{x.role === 'admin' ? 'Administrador' : 'Colaborador'}</span> },
+      { label: 'Situação', cell: (x) => !x.active ? <span className="tag tag-muted">Desativado</span>
+        : x.inviteExpiresAt && new Date(x.inviteExpiresAt) > new Date() ? <span className="tag tag-warn">Convite pendente · até {new Date(x.inviteExpiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+        : !x.hasPassword ? <span className="tag tag-muted">Convite expirado</span>
+        : <span className="tag">Ativo</span> },
+    ],
+  };
+
+  const list = pageIsKind && page !== 'fill' ? rows(page).filter((x) => !q || JSON.stringify(x).toLowerCase().includes(q)) : [];
+
+  const bind = (key: string) => ({ name: key, value: form[key] ?? '', error: fieldErrors[key], onValueChange: (v: string) => set(key, v) });
+  const toOptions = (list: Row[], label: (x: Row) => string = (x) => x.name) => list.map((x) => ({ value: x.id, label: label(x) }));
+
+  const modalBody = modal && (
+    <>
+      <Input {...bind('name')} label={modal.kind === 'vehicle' ? 'Modelo / descrição' : modal.kind === 'contract' ? 'Identificação do contrato' : modal.kind === 'fuel' ? 'Combustível' : 'Nome'}
+        maxLength={200} full={modal.kind !== 'vehicle' && modal.kind !== 'member'} />
+      {modal.kind === 'vehicle' && <>
+        <Input {...bind('plate')} label="Placa" maxLength={8} autoCapitalize="characters" hint="Ex.: ABC1D23 ou ABC1234" />
+        <Select {...bind('institutionId')} label="Instituição" options={toOptions(inst)} full />
+      </>}
+      {(modal.kind === 'institution' || modal.kind === 'person') && <>
+        <Input {...bind('document')} label={modal.kind === 'institution' ? 'CNPJ / CPF' : 'CPF / documento'} optional />
+        <Input {...bind('contact')} label="Contato" optional />
+      </>}
+      {modal.kind === 'fuel' && (
+        <Input {...bind('price')} label="Preço por litro (R$)" type="number" min={0.01} max={100} step={0.01} inputMode="decimal"
+          hint="Vale para os próximos lançamentos; o histórico mantém o preço original." />
+      )}
+      {modal.kind === 'member' && <>
+        <Input {...bind('email')} label="E-mail de acesso" type="email" autoComplete="off" />
+        <Select {...bind('role')} label="Perfil de acesso" placeholder="" full
+          options={[{ value: 'attendant', label: 'Colaborador — abastecimentos e Oficina' }, { value: 'admin', label: 'Administrador — acesso completo' }]} />
+        {!modal.id && <p className="hint field-full">Ao salvar, o sistema gera um link de convite válido por 3 horas. Envie o link para a pessoa criar a própria senha.</p>}
+        {modal.id && (
+          <Select {...bind('active')} label="Acesso" placeholder=""
+            options={[{ value: 'true', label: 'Ativo — pode entrar no sistema' }, { value: 'false', label: 'Desativado — não consegue entrar' }]} />
+        )}
+      </>}
+      {modal.kind === 'contract' && <>
+        <Select {...bind('institutionId')} label="Instituição" options={toOptions(inst)} full />
+        <Select {...bind('personId')} label="Pessoa responsável" options={toOptions(rows('person'))} optional />
+        <Select {...bind('vehicleId')} label="Veículo" optional placeholder={form.institutionId ? 'Todos os veículos' : 'Escolha a instituição antes'}
+          options={toOptions(vehicles.filter((x) => x.institutionId === form.institutionId), (x) => `${x.plate} · ${x.name}`)} />
+        <Input {...bind('start')} label="Início da vigência" type="date" />
+        <Input {...bind('end')} label="Fim da vigência" type="date" />
+        <Input {...bind('note')} label="Condições / observações" optional full />
+      </>}
+    </>
+  );
+
+  const days = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+  const isCurrentMonth = month === today().slice(0, 7);
+  const todayDay = Number(today().slice(8, 10));
+  const perDay = Array.from({ length: days }, (_, i) => fills.filter((x) => Number(x.date.slice(8, 10)) === i + 1).reduce((a, b) => a + b.liters, 0));
+  const scale = niceScale(Math.max(0, ...perDay));
+  const ticks = Array.from({ length: Math.round(scale.top / scale.step) + 1 }, (_, i) => scale.top - i * scale.step);
+
+  const statementInst = institution ? instById.get(institution) : null;
+
+  const header = (
+    <header className="page-header">
+      <div>
+        <h1>{page === 'report' && statementInst ? statementInst.name : TITLES[page]}</h1>
+        <p>
+          {page === 'overview' && `Abastecimentos de ${monthLabel(month)}${institution ? ` · ${instById.get(institution)?.name}` : ''}`}
+          {page === 'fill' && `${searchedFills.length} de ${fills.length} lançamentos em ${monthLabel(month)}`}
+          {page === 'report' && (statementInst ? `Extrato de ${monthLabel(month)}${statementInst.document ? ` · ${statementInst.document}` : ''}` : `Totais a faturar por instituição em ${monthLabel(month)}`)}
+          {pageIsKind && page !== 'fill' && `${rows(page).length} ${rows(page).length === 1 ? 'cadastro' : 'cadastros'}`}
+          {page === 'workshop' && 'Estoque de peças, entradas, uso previsto e entregas por veículo'}
+        </p>
+      </div>
+    </header>
+  );
+
+  const toolbar = page === 'workshop' ? null : (
+    <Toolbar
+      actions={page === 'report' ? <>
+        <button className="btn" onClick={() => window.print()} disabled={!fills.length}><Printer size={16} aria-hidden="true" /> Imprimir / PDF</button>
+        <button className="btn btn-primary" onClick={exportCsv} disabled={!fills.length}><Download size={16} aria-hidden="true" /> Exportar planilha</button>
+      </> : pageIsKind && page !== 'fill' ? (
+        <button className="btn btn-primary" onClick={() => open(listKind)}><Plus size={16} aria-hidden="true" /> Cadastrar {SINGULAR[listKind]}</button>
+      ) : undefined}
+    >
+      {page === 'fill' && <SearchInput label="Buscar abastecimentos" placeholder="Placa, veículo, instituição ou motorista" value={query} onValueChange={setQuery} />}
+      {pageIsKind && page !== 'fill' && <SearchInput label={`Buscar em ${TITLES[page].toLowerCase()}`} value={query} onValueChange={setQuery} />}
+      {(page === 'overview' || page === 'fill' || page === 'report') && <>{monthSelect}{institutionSelect}</>}
+    </Toolbar>
+  );
+
+  const kpis = (
+    <section className="kpis" aria-label="Indicadores do mês">
+      <Card className="kpi"><h2>Valor total</h2><strong><Counter value={total / 100} decimals={2} prefix="R$ " /></strong><p>{liters ? `Preço médio ${money(Math.round(total / liters))} por litro` : 'Sem lançamentos no período'}</p></Card>
+      <Card className="kpi"><h2>Abastecimentos</h2><strong><Counter value={fills.length} /></strong><p>{fills.length ? `Média de ${num(liters / fills.length, 1)} L por abastecimento` : '—'}</p></Card>
+      <Card className="kpi"><h2>Litros abastecidos</h2><strong><Counter value={Math.round(liters * 100) / 100} decimals={2} /><span className="unit"> L</span></strong><p>{Array.from(new Set(fills.map((x) => x.fuel))).join(', ') || '—'}</p></Card>
+      <Card className="kpi"><h2>Veículos atendidos</h2><strong><Counter value={new Set(fills.map((x) => x.plate)).size} /></strong><p>em {groups.length} {groups.length === 1 ? 'instituição' : 'instituições'}</p></Card>
+    </section>
+  );
+
+  return (
+    <div className="shell">
+      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <div className="mobile-bar">
+        <button className="icon-btn" aria-label="Abrir menu" aria-expanded={navOpen} aria-controls="menu-lateral" onClick={() => setNavOpen(true)}><Menu size={20} aria-hidden="true" /></button>
+        <strong>{TITLES[page]}</strong>
+        <span className={syncError ? 'sync-dot is-error' : 'sync-dot'} role="img" aria-label={syncError ? 'Sincronização interrompida' : 'Sincronizado'} />
+      </div>
+      {navOpen && <button className="nav-backdrop" aria-label="Fechar menu" onClick={() => setNavOpen(false)} />}
+      <aside id="menu-lateral" className={navOpen ? 'sidebar is-open' : 'sidebar'} aria-label="Menu principal">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true"><Fuel size={18} /></span>
+          <span><strong>Controle de Transporte</strong><small>Gestão de abastecimentos</small></span>
+          <button className="icon-btn nav-close" aria-label="Fechar menu" onClick={() => setNavOpen(false)}><X size={18} aria-hidden="true" /></button>
+        </div>
+        <nav aria-label="Seções">
+          {NAV.map((group, gi) => (
+            <div className="nav-group" key={gi}>
+              {group.label && <p className="nav-label" id={`nav-${gi}`}>{group.label}</p>}
+              <ul aria-labelledby={group.label ? `nav-${gi}` : undefined}>
+                {group.items.map((p) => {
+                  const I = ICONS[p];
+                  return (
+                    <li key={p}>
+                      <button className="nav-item" aria-current={page === p ? 'page' : undefined} onClick={() => go(p)}>
+                        <I size={18} aria-hidden="true" />{TITLES[p]}
+                        {p === 'fill' && <span className="nav-count" aria-label={`${monthFills.length} no mês`}>{monthFills.length}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+        <div className="sidebar-foot">
+          <a className="nav-item" href="/frentista"><ArrowUpRight size={18} aria-hidden="true" />Área do colaborador</a>
+          <p className={syncError ? 'sync is-error' : 'sync'} role="status">
+            <span className="sync-dot" aria-hidden="true" />
+            {syncError ? <>{syncError} <button className="link-btn" onClick={() => void load()}>Tentar de novo</button></> : `Atualizado às ${lastSync}`}
+          </p>
+          <div className="me">
+            <span className="avatar" aria-hidden="true">{initials}</span>
+            <span><strong>{user.name}</strong><small>Administrador</small></span>
+            <button className="icon-btn" onClick={() => void signOut()} aria-label="Sair"><LogOut size={18} aria-hidden="true" /></button>
+          </div>
+        </div>
+      </aside>
+
+      <main id="conteudo" className="content" tabIndex={-1}>
+        {page === 'report' && statementInst && (
+          <button className="back-link" onClick={() => setInstitution('')}><ChevronLeft size={16} aria-hidden="true" /> Todas as instituições</button>
+        )}
+        {header}
+        {toolbar}
+
+        {page === 'workshop' && <Workshop data={data} onRefresh={() => load(true, true)} />}
+
+        {page === 'overview' && <>
+          <Reveal>{kpis}</Reveal>
+          <div className="overview-grid">
+            <Card className="panel">
+              <div className="panel-head">
+                <div><h2>Litros por dia</h2><p>{monthLabel(month)} · {num(liters, 2)} L no mês</p></div>
+                <button className="link-btn" onClick={() => go('fill')}>Ver abastecimentos</button>
+              </div>
+              <div className="chart" role="img" aria-label={`Litros por dia em ${monthLabel(month)}. Maior dia: ${num(Math.max(0, ...perDay))} litros. Total: ${num(liters, 2)} litros.`}>
+                <div className="chart-axis" aria-hidden="true">{ticks.map((t) => <span key={t}>{num(t, 0)}</span>)}</div>
+                <div className="chart-plot" aria-hidden="true">
+                  {ticks.map((t) => <i key={t} className="gridline" style={{ bottom: `${(t / scale.top) * 100}%` }} />)}
+                  {perDay.map((v, i) => {
+                    const future = isCurrentMonth && i + 1 > todayDay;
+                    return (
+                      <div className="bar-col" key={i} title={`Dia ${i + 1}: ${num(v)} L`}>
+                        {!future && <div className={v ? 'bar' : 'bar bar-empty'} style={v ? { height: `${(v / scale.top) * 100}%` } : undefined} />}
+                        {(i === 0 || (i + 1) % 5 === 0) && <small>{i + 1}</small>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {!fills.length && <p className="chart-empty">Sem abastecimentos neste período.</p>}
+              </div>
+            </Card>
+            <Card className="panel">
+              <div className="panel-head">
+                <div><h2>Por instituição</h2><p>Valor acumulado no mês</p></div>
+                <button className="link-btn" onClick={() => go('report')}>Fechamento mensal</button>
+              </div>
+              {groups.length ? (
+                <ul className="shares">
+                  {groups.slice(0, 5).map((g) => (
+                    <li key={g.id}>
+                      <div><span>{g.name}</span><strong>{money(g.total)}</strong></div>
+                      <div className="meter" aria-hidden="true"><i style={{ width: `${total ? (g.total / total) * 100 : 0}%` }} /></div>
+                      <small>{num(total ? (g.total / total) * 100 : 0, 1)}% do total · {g.count} {g.count === 1 ? 'abastecimento' : 'abastecimentos'}</small>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="empty empty-sm">
+                  <p>{inst.length ? 'Os totais por instituição aparecem com o primeiro lançamento.' : 'Cadastre as instituições atendidas para separar a cobrança.'}</p>
+                  {!inst.length && <button className="btn" onClick={() => open('institution')}>Cadastrar instituição</button>}
+                </div>
+              )}
+            </Card>
+          </div>
+          <Card className="panel">
+            <div className="panel-head">
+              <div><h2>Últimos abastecimentos</h2><p>Os lançamentos mais recentes do período</p></div>
+              <button className="link-btn" onClick={() => go('fill')}>Ver todos</button>
+            </div>
+            {fillsTable(fills.slice(0, 6), true)}
+          </Card>
+        </>}
+
+        {page === 'fill' && (
+          <Card className="panel">
+            {fillsTable(searchedFills)}
+          </Card>
+        )}
+
+        {page === 'report' && !statementInst && (
+          <Card className="panel">
+            {monthGroups.length ? (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Instituição</th>
+                      <th scope="col" className="num">Veículos</th>
+                      <th scope="col" className="num">Abastecimentos</th>
+                      <th scope="col" className="num">Litros</th>
+                      <th scope="col" className="num total-cell">Total a faturar</th>
+                      <th scope="col"><span className="sr-only">Ações</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthGroups.map((g) => (
+                      <tr key={g.id}>
+                        <td data-label="Instituição" className="strong">{g.name}</td>
+                        <td data-label="Veículos" className="num">{g.cars}</td>
+                        <td data-label="Abastecimentos" className="num">{g.count}</td>
+                        <td data-label="Litros" className="num">{num(g.liters, 2)} L</td>
+                        <td data-label="Total a faturar" className="num strong total-cell">{money(g.total)}</td>
+                        <td className="row-action"><button className="btn btn-sm" onClick={() => setInstitution(g.id)}>Ver extrato</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="row">Total do mês</th>
+                      <td className="num">{new Set(monthFills.map((x) => x.plate)).size}</td>
+                      <td className="num">{monthFills.length}</td>
+                      <td className="num">{num(monthFills.reduce((a, b) => a + b.liters, 0), 2)} L</td>
+                      <td className="num total-cell">{money(monthFills.reduce((a, b) => a + b.totalCents, 0))}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="empty">
+                <ClipboardList size={28} aria-hidden="true" />
+                <h3>Nada para faturar em {monthLabel(month)}</h3>
+                <p>Escolha outro mês ou aguarde os lançamentos dos colaboradores.</p>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {page === 'report' && statementInst && (
+          <Card className="panel statement">
+            <dl className="statement-meta">
+              <div><dt>Instituição</dt><dd>{statementInst.name}</dd></div>
+              <div><dt>CNPJ / CPF</dt><dd>{statementInst.document || '—'}</dd></div>
+              <div><dt>Contato</dt><dd>{statementInst.contact || '—'}</dd></div>
+              <div><dt>Período</dt><dd>{monthLabel(month)}</dd></div>
+              <div><dt>Abastecimentos</dt><dd>{fills.length} · {num(liters, 2)} L</dd></div>
+              <div className="statement-total"><dt>Total a faturar</dt><dd>{money(total)}</dd></div>
+            </dl>
+            {fillsTable([...fills].reverse())}
+          </Card>
+        )}
+
+        {pageIsKind && page !== 'fill' && (
+          <Card className="panel">
+            {page === 'member' && <p className="note">Cada pessoa entra com o próprio e-mail e senha. Ao cadastrar alguém, o sistema gera um link de convite (válido por 3 horas e de uso único) para a pessoa criar a senha. Use “Gerar link” para reenviar um convite expirado ou para quem esqueceu a senha.</p>}
+            {page === 'fuel' && <p className="note">Um novo preço vale para os próximos lançamentos. Os abastecimentos já registrados mantêm o preço original.</p>}
+            {list.length ? (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      {listColumns[listKind].map((c) => <th key={c.label} scope="col" className={c.num ? 'num' : undefined}>{c.label}</th>)}
+                      <th scope="col"><span className="sr-only">Ações</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.map((x) => (
+                      <tr key={x.id}>
+                        {listColumns[listKind].map((c) => <td key={c.label} data-label={c.label} className={c.num ? 'num' : undefined}>{c.cell(x)}</td>)}
+                        <td className="row-action">
+                          {page === 'member' && x.active && (
+                            <button className="btn btn-sm" onClick={() => void generateLink(x)} disabled={linkBusy === x.id} aria-label={`Gerar link de acesso para ${x.name}`}>
+                              {linkBusy === x.id ? <RefreshCw className="spin" size={14} aria-hidden="true" /> : <Link2 size={14} aria-hidden="true" />} Gerar link
+                            </button>
+                          )}{' '}
+                          <button className="btn btn-sm" onClick={() => open(listKind, x)} aria-label={`Editar ${x.plate || x.name || x.email}`}><Pencil size={14} aria-hidden="true" /> Editar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty">
+                <Plus size={28} aria-hidden="true" />
+                <h3>{q ? 'Nada encontrado' : `Nenhum ${SINGULAR[listKind]} cadastrado`}</h3>
+                <p>{q ? 'Tente outro termo de busca.' : page === 'vehicle' && !inst.length ? 'Cadastre uma instituição antes de vincular veículos.' : `Cadastre ${page === 'person' || page === 'institution' ? 'a primeira' : 'o primeiro'} para organizar a operação.`}</p>
+                {!q && (page === 'vehicle' && !inst.length
+                  ? <button className="btn btn-primary" onClick={() => open('institution')}>Cadastrar instituição</button>
+                  : <button className="btn btn-primary" onClick={() => open(listKind)}>Cadastrar {SINGULAR[listKind]}</button>)}
+              </div>
+            )}
+          </Card>
+        )}
+      </main>
+
+      <div className="toast-region" aria-live="polite">
+        {toast && <div className="toast"><CheckCircle2 size={18} aria-hidden="true" />{toast}</div>}
+      </div>
+
+      {inviteResult && (
+        <Dialog title="Link de acesso gerado" onClose={() => setInviteResult(null)}>
+          <InviteLink invite={inviteResult} />
+        </Dialog>
+      )}
+
+      {modal && (
+        <Dialog title={modal.id ? `Editar ${SINGULAR[modal.kind]}` : `Cadastrar ${SINGULAR[modal.kind]}`} onClose={() => setModal(null)} busy={busy}>
+          <form onSubmit={save} noValidate>
+            <fieldset className="form-grid" disabled={busy}>{modalBody}</fieldset>
+            {formError && <p role="alert" className="notice notice-error">{formError}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={busy}>Cancelar</button>
+              <button className="btn btn-primary" disabled={busy}>{busy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Salvando…</> : modal.id ? 'Salvar alterações' : `Salvar ${SINGULAR[modal.kind]}`}</button>
+            </div>
+          </form>
+        </Dialog>
+      )}
+    </div>
+  );
 }

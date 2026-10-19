@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Fechamento mensal</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ground:#fbfaf6;--paper:#fff;--carbon:#23408e;--carbon-d:#1b3270;--red:#c0312b;--amarela:#f6e7a1;--amarela-t:#fcf5d6;--rosa:#f2c6c9;--ink:#1c1c1c;--ink2:#545249;--rule:#dedad0;--rule2:#ece9e1;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:flex;background:var(--ground);color:var(--ink);font:400 14px/20px "Archivo",system-ui,sans-serif}
+.lbl{font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-stretch:87%}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.serial{font-family:var(--mono);font-weight:700;color:var(--red);letter-spacing:.02em}
+/* nav */
+nav{width:232px;flex:none;background:var(--carbon);color:#fff;display:flex;flex-direction:column;padding:24px 16px}
+.brand{padding:0 8px 24px;border-bottom:1px solid rgba(255,255,255,.16);margin-bottom:16px}
+.brand b{display:block;font-size:16px;line-height:24px;font-weight:700;font-stretch:87%}
+.brand span{font-size:12px;line-height:16px;color:#c9d3ee}
+nav ul{list-style:none}
+nav a{display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 12px;border-radius:6px;color:#e6ebf7;text-decoration:none;font-weight:500}
+nav a:hover{background:rgba(255,255,255,.08)}
+nav a.on{background:#fff;color:var(--carbon);font-weight:700;box-shadow:inset 3px 0 0 var(--red)}
+nav a em{font-style:normal;font-family:var(--mono);font-size:12px;color:#c9d3ee}
+.navsec{color:#c9d3ee;padding:24px 12px 8px}
+.who{margin-top:auto;padding:16px 8px 0;border-top:1px solid rgba(255,255,255,.16);font-size:13px;line-height:16px}
+.who span{display:block;color:#c9d3ee;font-size:12px;margin-top:4px}
+/* main */
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:56px;flex:none;display:flex;align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--rule);background:var(--paper)}
+.crumb{color:var(--ink2);font-size:13px}.crumb b{color:var(--ink);font-weight:600}
+.sync{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.sync i{width:8px;height:8px;border-radius:50%;background:#2f7d4f;box-shadow:0 0 0 3px #d7eadd}
+.btn{height:36px;padding:0 16px;border-radius:6px;border:1px solid #bdb8aa;background:var(--paper);color:var(--ink);font:600 13px/1 "Archivo",sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.btn.pri:hover{background:#a6271f}
+select{height:36px;padding:0 32px 0 12px;border:1px solid #bdb8aa;border-radius:6px;background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231c1c1c' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;appearance:none;font:500 13px "Archivo",sans-serif;color:var(--ink)}
+.page{padding:24px 32px;display:flex;flex-direction:column;gap:24px;min-height:0;flex:1}
+.head{display:flex;align-items:flex-end;gap:8px}
+.head h1{font-size:28px;line-height:32px;font-weight:700;font-stretch:87%;letter-spacing:-.01em}
+.head p{color:var(--ink2);font-size:13px;margin-top:4px}
+.head .tools{margin-left:auto;display:flex;gap:8px}
+/* totals */
+.totals{display:grid;grid-template-columns:1.6fr repeat(4,1fr);border:1px solid var(--rule);border-radius:8px;background:var(--paper)}
+.totals div{padding:12px 20px;border-left:1px solid var(--rule2)}
+.totals div:first-child{border-left:0;box-shadow:inset 0 0 0 2px var(--ink);border-radius:8px 0 0 8px}
+.totals .lbl{color:var(--ink2)}
+.totals strong{display:block;font-family:var(--mono);font-size:20px;line-height:28px;font-weight:500;margin-top:4px}
+.totals div:first-child strong{font-size:24px;font-weight:700}
+/* work */
+.work{display:grid;grid-template-columns:320px 1fr;gap:24px;min-height:0}
+.colh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.colh h2{font-size:15px;line-height:20px;font-weight:700}
+.colh span{font-size:13px;color:var(--ink2)}
+.vias{display:flex;flex-direction:column;gap:12px}
+.via{background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.strip{height:32px;display:flex;align-items:center;justify-content:space-between;padding:4px 16px 0;background:radial-gradient(circle at 6px 0,var(--ground) 2.5px,transparent 3px) 0 0/12px 8px repeat-x,var(--rosa);border-bottom:1px dashed #b98e92}
+.strip .lbl{color:#5b2a2e}
+.chip{font-size:12px;line-height:20px;font-weight:600;padding:0 8px;border-radius:10px;background:var(--paper);color:#5b2a2e}
+.chip.wait{background:var(--amarela);color:#4f4210;box-shadow:inset 0 0 0 1px #d6c26a}
+.vb{padding:12px 16px 16px}
+.vb h3{font-size:15px;line-height:20px;font-weight:700}
+.vb p{font-size:13px;color:var(--ink2);margin:4px 0 12px}
+.tbox{display:flex;align-items:stretch;border:2px solid var(--ink);border-radius:2px;height:44px}
+.tbox span{display:flex;align-items:center;padding:0 12px;border-right:2px solid var(--ink);background:var(--ground)}
+.tbox strong{flex:1;display:flex;align-items:center;justify-content:flex-end;padding:0 12px;font-family:var(--mono);font-size:20px;font-weight:700}
+.check{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:12px 4px 0;border-top:1px solid var(--rule)}
+.check b{font-family:var(--mono);color:var(--ink);font-weight:500}
+/* table */
+.tcard{background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.tcard .colh{padding:16px 20px 0;margin-bottom:12px}
+.tcard .colh a{color:var(--carbon);font-weight:600;font-size:13px;text-decoration:none}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{text-align:left;padding:10px 12px;background:var(--ground);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);color:var(--ink2)}
+td{padding:12px;border-bottom:1px solid var(--rule2);vertical-align:top;font-size:13px;line-height:20px}
+tr:last-child td{border-bottom:0}
+th:first-child,td:first-child{padding-left:20px}
+th:last-child,td:last-child{padding-right:20px}
+.r{text-align:right}
+td small{display:block;font-size:12px;line-height:16px;color:var(--ink2)}
+td .serial{font-size:14px}
+.plate{font-family:var(--mono);font-weight:500;font-size:13px;letter-spacing:.04em}
+tr.new td{background:var(--amarela-t)}
+tr.new td:first-child{box-shadow:inset 4px 0 0 #d9b92f}
+.tag{display:inline-block;margin-top:4px;font-size:12px;line-height:18px;font-weight:600;padding:0 6px;border-radius:3px;background:var(--amarela);color:#4f4210;box-shadow:inset 0 0 0 1px #d6c26a}
+.fuel{display:inline-block;padding:0 8px;border:1px solid var(--rule);border-radius:3px;font-size:12px;line-height:20px;font-weight:500}
+</style>
+</head>
+<body>
+<nav aria-label="Navegação principal">
+  <div class="brand"><b>Controle de Transporte</b><span>Administração</span></div>
+  <ul>
+    <li><a href="#">Visão geral</a></li>
+    <li><a href="#">Abastecimentos <em>12</em></a></li>
+    <li><a href="#">Instituições</a></li>
+    <li><a href="#">Veículos</a></li>
+    <li><a href="#">Pessoas</a></li>
+    <li><a href="#">Contratos</a></li>
+  </ul>
+  <div class="navsec lbl">Administração</div>
+  <ul>
+    <li><a href="#" class="on" aria-current="page">Fechamento mensal</a></li>
+    <li><a href="#">Combustíveis e preços</a></li>
+    <li><a href="#">Equipe e acessos</a></li>
+  </ul>
+  <div class="who">Administrador<span>Sessão de gestor</span></div>
+</nav>
+<main>
+  <header class="top">
+    <div class="crumb">Administração / <b>Fechamento mensal</b></div>
+    <div class="sync"><i></i>Atualizado há 3 s</div>
+    <button class="btn pri">+ Novo abastecimento</button>
+  </header>
+  <div class="page">
+    <div class="head">
+      <div><h1>Fechamento de outubro 2026</h1><p>Período de 01/10 a 31/10 · 1 abastecimento aguardando conferência</p></div>
+      <div class="tools">
+        <select aria-label="Mês"><option>outubro 2026</option><option>setembro 2026</option></select>
+        <select aria-label="Instituição"><option>Todas as instituições</option></select>
+        <button class="btn">Exportar planilha</button>
+        <button class="btn">Imprimir / PDF</button>
+      </div>
+    </div>
+    <section class="totals" aria-label="Totais do mês">
+      <div><span class="lbl">Total do mês</span><strong>R$ 8.533,01</strong></div>
+      <div><span class="lbl">Abastecimentos</span><strong>12</strong></div>
+      <div><span class="lbl">Litros</span><strong>1.438,25 L</strong></div>
+      <div><span class="lbl">Veículos</span><strong>5</strong></div>
+      <div><span class="lbl">Instituições</span><strong>3</strong></div>
+    </section>
+    <div class="work">
+      <section aria-label="Vias por instituição">
+        <div class="colh"><h2>Vias por instituição</h2><span>3 vias · out/2026</span></div>
+        <div class="vias">
+          <article class="via"><div class="strip"><span class="lbl">Via da instituição</span><span class="chip">Conferida</span></div>
+            <div class="vb"><h3>Transportadora Rota Norte Ltda</h3><p>2 veículos · 5 abastecimentos · <span class="mono">1.088,7 L</span></p>
+            <div class="tbox"><span class="lbl">Total R$</span><strong>6.521,32</strong></div></div></article>
+          <article class="via"><div class="strip"><span class="lbl">Via da instituição</span><span class="chip">Conferida</span></div>
+            <div class="vb"><h3>Secretaria Municipal de Saúde</h3><p>2 veículos · 5 abastecimentos · <span class="mono">269,8 L</span></p>
+            <div class="tbox"><span class="lbl">Total R$</span><strong>1.661,59</strong></div></div></article>
+          <article class="via"><div class="strip"><span class="lbl">Via da instituição</span><span class="chip wait">1 a conferir</span></div>
+            <div class="vb"><h3>Cooperativa Agrícola Vale Verde</h3><p>1 veículo · 2 abastecimentos · <span class="mono">79,75 L</span></p>
+            <div class="tbox"><span class="lbl">Total R$</span><strong>350,10</strong></div></div></article>
+          <div class="check"><span>Soma das vias confere com o mês</span><b>R$ 8.533,01</b></div>
+        </div>
+      </section>
+      <section class="tcard" aria-label="Abastecimentos recentes">
+        <div class="colh"><h2>Abastecimentos recentes</h2><a href="#">Ver todos os 12 →</a></div>
+        <table>
+          <colgroup><col style="width:96px"><col style="width:156px"><col><col style="width:120px"><col style="width:84px"><col style="width:108px"><col style="width:128px"></colgroup>
+          <thead><tr><th class="lbl">Nº / data</th><th class="lbl">Placa / veículo</th><th class="lbl">Instituição</th><th class="lbl">Combustível</th><th class="lbl r">Litros</th><th class="lbl r">Total</th><th class="lbl">Colaborador</th></tr></thead>
+          <tbody>
+            <tr class="new"><td><span class="serial">Nº 0012</span><small>18/10</small></td><td><span class="plate">OCV9D04</span><small>Strada Endurance</small></td><td>Cooperativa Agrícola Vale Verde<br><span class="tag">Novo · aguardando conferência</span></td><td><span class="fuel">Etanol</span></td><td class="r mono">41,0 L</td><td class="r mono">R$ 179,99</td><td>João Silva<small>enviado há 3 s</small></td></tr>
+            <tr><td><span class="serial">Nº 0011</span><small>17/10</small></td><td><span class="plate">RTN2E87</span><small>Volvo FH 540</small></td><td>Transportadora Rota Norte</td><td><span class="fuel">Diesel S10</span></td><td class="r mono">302,8 L</td><td class="r mono">R$ 1.813,77</td><td>João Silva</td></tr>
+            <tr><td><span class="serial">Nº 0010</span><small>16/10</small></td><td><span class="plate">QXA4F21</span><small>Ambulância Sprinter</small></td><td>Secretaria Municipal de Saúde</td><td><span class="fuel">Gasolina comum</span></td><td class="r mono">50,3 L</td><td class="r mono">R$ 316,39</td><td>Administrador</td></tr>
+            <tr><td><span class="serial">Nº 0009</span><small>14/10</small></td><td><span class="plate">PNB7C33</span><small>Hilux SW4</small></td><td>Secretaria Municipal de Saúde</td><td><span class="fuel">Diesel S10</span></td><td class="r mono">57,0 L</td><td class="r mono">R$ 341,43</td><td>João Silva</td></tr>
+            <tr><td><span class="serial">Nº 0008</span><small>13/10</small></td><td><span class="plate">RTN5A12</span><small>Accelo 815</small></td><td>Transportadora Rota Norte</td><td><span class="fuel">Diesel S10</span></td><td class="r mono">92,1 L</td><td class="r mono">R$ 551,68</td><td>João Silva</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+</main>
+</body>
+</html>

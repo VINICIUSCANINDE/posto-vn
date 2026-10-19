@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Fechamento mensal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<style>
+:root{--asf:#14202b;--asf2:#24323f;--ground:#f6f5ef;--panel:#fff;--sig:#f2c230;--ink:#14202b;--ink2:#4a5662;--line:#dcd9cc;--ctl:#6b7480;--nav:#dfe4e8;--nav2:#a9b4bf;--gas:#d1432f;--die:#2a5aa8;--eta:#3c8d4f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:grid;grid-template-columns:232px 1fr;background:var(--ground);color:var(--ink);font:400 14px/20px Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.t12{font-size:12px;line-height:16px}.t18{font-size:18px;line-height:24px;font-weight:600}
+.cap{font-size:12px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.mute{color:var(--ink2)}
+.num{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* rail */
+.rail{background:var(--asf);color:var(--nav);display:flex;flex-direction:column}
+.brand{height:64px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #2c3a47}
+.mark{width:32px;height:32px;border-radius:4px;background:var(--ground);color:var(--asf);display:grid;place-items:center;font:600 18px/1 "Barlow Condensed"}
+.brand b{display:block;color:#fff;font-weight:600}.brand span{color:var(--nav2)}
+nav{padding:16px 12px;display:flex;flex-direction:column;gap:4px;flex:1}
+nav a{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-radius:4px;color:var(--nav);text-decoration:none;font-weight:500}
+nav a.on{background:var(--asf2);color:#fff;box-shadow:inset 3px 0 0 var(--ground)}
+nav .ct{font-size:12px;line-height:20px;padding:0 8px;border-radius:10px;background:#2c3a47;color:#fff}
+nav .sec{margin:24px 12px 8px;color:var(--nav2)}
+.me{padding:16px 24px;border-top:1px solid #2c3a47;display:flex;justify-content:space-between;align-items:center}
+.me span{color:var(--nav2)}
+/* main */
+main{display:flex;flex-direction:column;min-width:0}
+.top{height:64px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line)}
+.crumb a{color:var(--ink2);text-decoration:none}.crumb i{font-style:normal;color:var(--ink2);margin:0 8px}.crumb b{font-weight:600}
+.row{display:flex;align-items:center;gap:8px}
+.sync{display:flex;align-items:center;gap:8px;margin-right:16px}
+.sync:before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--asf);background:var(--ground)}
+.btn{height:40px;padding:0 16px;border-radius:4px;border:1px solid var(--ctl);background:var(--panel);color:var(--ink);font:600 14px/20px Barlow;cursor:pointer}
+.btn.pri{background:var(--sig);border-color:var(--asf)}
+select{height:40px;padding:0 40px 0 12px;border:1px solid var(--ctl);border-radius:4px;background:var(--panel);color:var(--ink);font:500 14px/20px Barlow;appearance:none;-webkit-appearance:none;
+ background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.head{display:flex;align-items:flex-end;justify-content:space-between;padding:24px 24px 0}
+h1{font-size:28px;line-height:32px;font-weight:600;margin-bottom:4px}
+.work{flex:1;min-height:0;display:grid;grid-template-columns:488px 1fr;gap:24px;padding:24px}
+/* totem (signature) */
+.totem{background:var(--asf);padding:4px;border-radius:6px;display:grid;grid-template-rows:32px 176px 1fr 1fr 1fr;gap:4px}
+.totem header{display:flex;justify-content:space-between;align-items:center;padding:0 16px;color:var(--nav)}
+.pn{background:var(--panel);border-radius:2px;padding:20px 24px;display:grid;grid-template-columns:1fr auto;column-gap:16px;align-items:center}
+.pn.sig{background:var(--sig)}
+.pn .who{display:flex;flex-direction:column;gap:4px}
+.pn .meta{color:var(--ink2)}.pn.sig .meta{color:var(--ink)}
+.big{font-size:64px;line-height:64px;letter-spacing:-.01em;text-align:right}
+.big small{font-size:28px;line-height:32px;margin-right:6px;vertical-align:top;position:relative;top:6px}
+/* right column */
+.right{display:flex;flex-direction:column;gap:24px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.fills{flex:1;display:flex;flex-direction:column}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:16px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{text-align:left;padding:12px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink2);background:var(--ground)}
+td{padding:16px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th:first-child,td:first-child{padding-left:16px}th:last-child,td:last-child{padding-right:16px;text-align:right}
+td b{font-weight:600;white-space:nowrap}
+td .t12{display:block;color:var(--ink2);margin-top:2px}
+tr.new td:first-child{white-space:nowrap}tr.new td{background:#eef0ea}tr.new td:first-child{box-shadow:inset 4px 0 0 var(--asf)}
+.tag{display:inline-block;margin-left:8px;padding:0 4px;border-radius:2px;background:var(--asf);color:#fff;font-size:12px;line-height:20px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;vertical-align:top}
+.fuel{display:inline-flex;align-items:center;gap:8px}
+.fuel:before{content:"";width:10px;height:10px;border-radius:2px;background:var(--c);flex:none}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+.foot a{color:var(--ink);font-weight:600}
+.prices{display:grid;grid-template-columns:repeat(3,1fr)}
+.prices>div{padding:16px;border-left:1px solid var(--line)}.prices>div:first-child{border-left:0}
+.prices .num{font-size:28px;line-height:32px;display:block;margin-top:8px}.prices .num small{font:500 14px/20px Barlow;color:var(--ink2);margin-left:4px}
+</style>
+</head>
+<body>
+<aside class="rail">
+  <div class="brand"><div class="mark">CT</div><div><b>Controle de Transporte</b><span class="t12">Gestão de abastecimentos</span></div></div>
+  <nav aria-label="Principal">
+    <a href="#">Visão geral</a>
+    <a href="#">Abastecimentos <span class="ct">12</span></a>
+    <a href="#">Instituições</a>
+    <a href="#">Veículos</a>
+    <a href="#">Pessoas</a>
+    <a href="#">Contratos</a>
+    <div class="sec cap">Administração</div>
+    <a href="#" class="on" aria-current="page">Fechamento mensal</a>
+    <a href="#">Combustíveis e preços</a>
+    <a href="#">Equipe e acessos</a>
+  </nav>
+  <div class="me"><div><b style="color:#fff;font-weight:600">Administrador</b></div><span class="t12">Sair</span></div>
+</aside>
+<main>
+  <div class="top">
+    <div class="crumb"><a href="#">Administração</a><i>/</i><b>Fechamento mensal</b></div>
+    <div class="row"><span class="sync mute">Atualizado há 3 s</span><button class="btn pri">+ Novo abastecimento</button></div>
+  </div>
+  <div class="head">
+    <div><h1>Fechamento de outubro 2026</h1><p class="mute">Período 01/10 a 31/10/2026 · fechamento em aberto · valores pelos preços vigentes</p></div>
+    <div class="row">
+      <select aria-label="Mês"><option>outubro 2026</option></select>
+      <select aria-label="Instituição"><option>Todas as instituições</option></select>
+      <button class="btn">Exportar planilha</button>
+      <button class="btn">Imprimir / PDF</button>
+    </div>
+  </div>
+  <div class="work">
+    <section class="totem" aria-label="Fechamento por instituição">
+      <header><span class="cap">Fechamento por instituição</span><span class="t12">3 instituições</span></header>
+      <div class="pn sig">
+        <div class="who"><span class="cap">Total do mês</span><span class="t18">Outubro de 2026</span><span class="meta">1.438,25 L · 5 veículos<br>12 abastecimentos</span></div>
+        <div class="num big"><small>R$</small>8.533,01</div>
+      </div>
+      <div class="pn">
+        <div class="who"><span class="t18">Transportadora Rota Norte Ltda</span><span class="meta">1.088,7 L · 2 veículos<br>5 abastecimentos</span></div>
+        <div class="num big"><small>R$</small>6.521,32</div>
+      </div>
+      <div class="pn">
+        <div class="who"><span class="t18">Secretaria Municipal de Saúde</span><span class="meta">269,8 L · 2 veículos<br>5 abastecimentos</span></div>
+        <div class="num big"><small>R$</small>1.661,59</div>
+      </div>
+      <div class="pn">
+        <div class="who"><span class="t18">Cooperativa Agrícola Vale Verde</span><span class="meta">79,75 L · 1 veículo<br>2 abastecimentos</span></div>
+        <div class="num big"><small>R$</small>350,10</div>
+      </div>
+    </section>
+    <div class="right">
+      <section class="card fills">
+        <div class="ch"><div><h2 class="t18">Abastecimentos recentes</h2><p class="mute">Lançados pelos colaboradores na pista</p></div><a href="#" class="btn" style="display:inline-flex;align-items:center;text-decoration:none">Ver todos</a></div>
+        <table>
+          <colgroup><col style="width:112px"><col style="width:144px"><col style="width:144px"><col style="width:136px"><col></colgroup>
+          <thead><tr><th class="cap">Registro</th><th class="cap">Veículo</th><th class="cap">Instituição</th><th class="cap">Combustível</th><th class="cap">Total</th></tr></thead>
+          <tbody>
+            <tr class="new"><td><b>18/10</b><span class="tag">novo</span><span class="t12">João Silva</span></td><td><b>Strada Endurance</b><span class="t12">OCV9D04</span></td><td>Cooperativa Agrícola Vale Verde</td><td><span class="fuel" style="--c:var(--eta)">Etanol</span></td><td><b>R$ 179,99</b><span class="t12">41,0 L</span></td></tr>
+            <tr><td><b>17/10</b><span class="t12">João Silva</span></td><td><b>Volvo FH 540</b><span class="t12">RTN2E87</span></td><td>Transportadora Rota Norte</td><td><span class="fuel" style="--c:var(--die)">Diesel S10</span></td><td><b>R$ 1.813,77</b><span class="t12">302,8 L</span></td></tr>
+            <tr><td><b>16/10</b><span class="t12">Administrador</span></td><td><b>Ambulância Sprinter</b><span class="t12">QXA4F21</span></td><td>Secretaria Municipal de Saúde</td><td><span class="fuel" style="--c:var(--gas)">Gasolina comum</span></td><td><b>R$ 316,39</b><span class="t12">50,3 L</span></td></tr>
+            <tr><td><b>14/10</b><span class="t12">João Silva</span></td><td><b>Hilux SW4</b><span class="t12">PNB7C33</span></td><td>Secretaria Municipal de Saúde</td><td><span class="fuel" style="--c:var(--die)">Diesel S10</span></td><td><b>R$ 341,43</b><span class="t12">57,0 L</span></td></tr>
+            <tr><td><b>13/10</b><span class="t12">João Silva</span></td><td><b>Accelo 815</b><span class="t12">RTN5A12</span></td><td>Transportadora Rota Norte</td><td><span class="fuel" style="--c:var(--die)">Diesel S10</span></td><td><b>R$ 551,68</b><span class="t12">92,1 L</span></td></tr>
+          </tbody>
+        </table>
+        <div class="foot"><span class="mute">Mostrando 5 de 12 abastecimentos de outubro</span><a href="#">Abrir lista completa</a></div>
+      </section>
+      <section class="card" aria-label="Preços vigentes">
+        <div class="prices">
+          <div><span class="fuel" style="--c:var(--gas)">Gasolina comum</span><span class="num">R$ 6,29<small>/L</small></span></div>
+          <div><span class="fuel" style="--c:var(--die)">Diesel S10</span><span class="num">R$ 5,99<small>/L</small></span></div>
+          <div><span class="fuel" style="--c:var(--eta)">Etanol</span><span class="num">R$ 4,39<small>/L</small></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+</body>
+</html>

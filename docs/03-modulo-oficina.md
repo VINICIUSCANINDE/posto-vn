@@ -27,7 +27,7 @@ As consultas aceitam busca por peça, código, placa ou recebedor, filtro por ve
 - Requer internet. Não há confirmação de entrega offline, assinatura digital ou comprovação de instalação da peça.
 
 ## Implementação
-`app/workshop.tsx` contém a interface; `app/api/workshop/route.ts` valida as operações no servidor. Os cadastros e movimentos utilizam a tabela entries. A migração `drizzle/0001_blue_giant_man.sql` cria workshop_counters para os saldos de estoque e pendências dos planejamentos.
+`app/workshop.tsx` contém a interface; `app/api/workshop/route.ts` valida as operações no servidor. Os cadastros e movimentos utilizam a tabela entries. A migração `drizzle/0001_same_steel_serpent.sql` (Postgres) cria workshop_counters para os saldos de estoque e pendências dos planejamentos.
 
 Os saldos são inteiros em milésimos. Gravação de saída, baixa no estoque e atualização da pendência ocorrem em uma transação de banco. A restrição de saldo não negativo reverte toda a operação em caso de disputa pelo mesmo estoque.
 

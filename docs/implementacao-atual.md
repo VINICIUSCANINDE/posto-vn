@@ -43,7 +43,7 @@ Os contratos nesta versão registram instituição, pessoa/veículo opcional e v
 
 Novo menu administrativo com estoque de peças, entradas e saídas, uso previsto por veículo e peças efetivamente entregues. A saída identifica quem recebeu e baixa o estoque de forma atômica. Consulte `docs/03-modulo-oficina.md` para as regras completas.
 
-A instalação local agora também exige a migração `drizzle/0001_blue_giant_man.sql`, depois da 0000, usando o mesmo comando de migração e sem reaplicar arquivos já executados. Os testes específicos da Oficina estão em `tests/workshop.mjs` (executar com o servidor local aberto: `node tests/workshop.mjs`). Foram aprovados 21 testes da Oficina e 19 dos abastecimentos, totalizando 40 verificações de integração.
+Depois da 0000, aplique a migração `drizzle/0001_same_steel_serpent.sql` com `pnpm db:migrate`, que cria a tabela `workshop_counters` no Postgres.
 
 ## Acesso unificado do operador
 
