@@ -26,6 +26,7 @@ As consultas aceitam busca por peça, código, placa ou recebedor, filtro por ve
 - A devolução fica ligada à saída original: a soma das devoluções nunca passa do que saiu, a data fica entre a saída e hoje, e o nome de quem devolveu é obrigatório. O saldo devolvível de cada saída é um contador (`out:<id>`) com baixa condicional, seguro contra envios simultâneos. A devolução não reabre o uso previsto.
 - Movimentações mantêm a identificação histórica da peça, veículo e instituição, além do responsável pelo registro.
 - Entradas e saídas confirmadas não são editadas ou apagadas nesta versão.
+- Administradores podem excluir uma peça do estoque (exclusão lógica, com registro em auditoria): ela some do estoque e das seleções e não recebe mais movimentos, mas o histórico continua. O código fica livre para um novo cadastro.
 - Requer internet. Não há confirmação de entrega offline, assinatura digital ou comprovação de instalação da peça.
 
 ## Implementação

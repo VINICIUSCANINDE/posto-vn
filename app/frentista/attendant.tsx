@@ -308,7 +308,7 @@ export default function Attendant() {
             <header className="page-header">
               <div><h1>Oficina</h1><p>Estoque de peças, entradas, uso previsto e entregas por veículo</p></div>
             </header>
-            <Workshop data={data} onRefresh={() => load(true)} />
+            <Workshop data={data} onRefresh={() => load(true)} canDelete={user.role === 'admin'} />
           </>
         )}
       </main>

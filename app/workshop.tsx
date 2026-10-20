@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Car, CheckCircle2, ClipboardList, Download, Package, Plus, RefreshCw, Undo2, X } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Car, CheckCircle2, ClipboardList, Download, Package, Plus, RefreshCw, Trash2, Undo2, X } from 'lucide-react';
 import { Card, Counter } from '../components/brand';
 import { Dialog } from '../components/dialog';
 import { InlineSelect, Input, Select, SearchInput } from '../components/form';
@@ -21,7 +21,7 @@ const TABS: { id: Tab; label: string; title: string; description: string }[] = [
 ];
 const UNITS = ['un', 'jogo', 'kit', 'L', 'kg', 'm'];
 
-export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: () => Promise<unknown> }) {
+export default function Workshop({ data, onRefresh, canDelete = false }: { data: Row[]; onRefresh: () => Promise<unknown>; canDelete?: boolean }) {
   const [tab, setTab] = useState<Tab>('stock');
   const [query, setQuery] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState('');
@@ -31,14 +31,16 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [deleting, setDeleting] = useState<Row | null>(null);
   const lock = useRef(false);
 
   const rows = (kind: string) => data.filter((x) => x.kind === `workshop_${kind}`);
-  const parts = rows('part'), plans = rows('plan'), ins = rows('in'), outs = rows('out'), returns = rows('return');
+  // Peças excluídas saem do estoque e das seleções; o histórico continua com os dados gravados em cada movimento.
+  const parts = rows('part').filter((x) => !x.deleted), plans = rows('plan'), ins = rows('in'), outs = rows('out'), returns = rows('return');
   // Quanto de cada saída já voltou ao estoque; o que sobra pode ser devolvido.
   const returnedOf = (outId: string) => returns.filter((x) => x.outId === outId).reduce((sum, x) => sum + x.quantityUnits, 0);
   const returnable = (o: Row) => o.quantityUnits - returnedOf(o.id);
-  const openOuts = outs.filter((o) => returnable(o) > 0).sort((a, b) => b.created.localeCompare(a.created));
+  const openOuts = outs.filter((o) => returnable(o) > 0 && parts.some((p) => p.id === o.partId)).sort((a, b) => b.created.localeCompare(a.created));
   const returningOut = outs.find((x) => x.id === form.outId);
   const vehicles = data.filter((x) => x.kind === 'vehicle');
   const part = parts.find((x) => x.id === form.partId);
@@ -86,6 +88,26 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
       await onRefresh();
     } catch (err) {
       setError((err as Error).message || 'Não foi possível salvar. Confira o histórico antes de tentar novamente.');
+    } finally {
+      setBusy(false);
+      lock.current = false;
+    }
+  }
+
+  async function removePart(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!deleting || lock.current) return;
+    const formEl = e.currentTarget;
+    lock.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      await request('/api/workshop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deletePart', values: { partId: deleting.id } }) }, 15000);
+      setNotice(`Peça ${deleting.name} excluída do estoque. O histórico de movimentações foi mantido.`);
+      formEl.closest('dialog')?.close();
+      await onRefresh();
+    } catch (err) {
+      setError((err as Error).message || 'Não foi possível excluir. Tente novamente.');
     } finally {
       setBusy(false);
       lock.current = false;
@@ -181,6 +203,7 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
                     <td className="row-action">
                       <button className="btn btn-sm" onClick={() => open('in', { partId: p.id })}>Entrada</button>{' '}
                       <button className="btn btn-sm" onClick={() => open('out', { partId: p.id })} disabled={!p.balanceUnits}>Saída</button>
+                      {canDelete && <>{' '}<button className="btn btn-sm btn-danger-ghost" onClick={() => { setError(''); setDeleting(p); }} aria-label={`Excluir ${p.name}`}><Trash2 size={14} aria-hidden="true" /> Excluir</button></>}
                     </td>
                   </tr>
                 ))}
@@ -254,6 +277,23 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
           </div>
         ) : emptyState(ArrowDownLeft, 'Nenhuma movimentação encontrada', 'Registre entradas e entregas para acompanhar o histórico do estoque.'))}
       </Card>
+
+      {deleting && (
+        <Dialog title={`Excluir ${deleting.name}?`} onClose={() => setDeleting(null)} busy={busy}>
+          <form onSubmit={removePart}>
+            <div className="form-grid">
+              <p className="field-full">A peça <strong>{deleting.name}</strong> ({deleting.code}) sai do estoque e não poderá mais receber entradas, saídas ou devoluções.</p>
+              {deleting.balanceUnits > 0 && <p className="notice notice-warn field-full">Ainda há {qty(deleting.balanceUnits)} {deleting.unit} em estoque. Esse saldo deixa de ser contado.</p>}
+              <p className="hint field-full">As entradas, saídas e devoluções já registradas continuam no histórico.</p>
+            </div>
+            {error && <p role="alert" className="notice notice-error">{error}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={busy}>Cancelar</button>
+              <button className="btn btn-danger" disabled={busy}>{busy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Excluindo…</> : <><Trash2 size={16} aria-hidden="true" /> Excluir peça</>}</button>
+            </div>
+          </form>
+        </Dialog>
+      )}
 
       {action && (
         <Dialog title={ACTION_TITLES[action]} onClose={() => setAction(null)} busy={busy}>

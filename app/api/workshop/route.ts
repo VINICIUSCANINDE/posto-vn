@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../../../db';
 import { entries, workshopCounters } from '../../../db/schema';
 import { getCurrentUser, json, sameOrigin } from '../../../lib/session';
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     if (!organizationId) return fail('O acesso master usa o painel de empresas.', 403);
 
     const { action, values } = (await req.json().catch(() => ({}))) as { action?: string; values?: Rec };
-    if (!action || !['part', 'in', 'plan', 'out', 'return'].includes(action) || !values || typeof values !== 'object') return fail('Operação inválida.');
+    if (!action || !['part', 'in', 'plan', 'out', 'return', 'deletePart'].includes(action) || !values || typeof values !== 'object') return fail('Operação inválida.');
     const text = (key: string) => String(values[key] ?? '').trim().slice(0, 200);
     const thousandths = (key: string) => {
       const n = Number(values[key]);
@@ -39,12 +39,27 @@ export async function POST(req: Request) {
     const created = new Date().toISOString();
     const record = (data: Rec) => ({ id, kind: `workshop_${action}`, data: JSON.stringify(data), created, actor: current.id, organizationId });
 
+    if (action === 'deletePart') {
+      if (current.role !== 'admin') return fail('Somente administradores podem excluir peças.', 403);
+      const found = all.find((x) => x.kind === 'workshop_part' && x.id === text('partId') && !x.deleted);
+      if (!found) return fail('Peça não encontrada.', 404);
+      // Exclusão lógica: a peça sai do estoque e das seleções, mas o histórico de movimentações continua íntegro.
+      const { id: partId, kind, ...before } = found;
+      const after = { ...before, deleted: true, deletedAt: created, deletedBy: current.name };
+      await db.transaction(async (tx) => {
+        await tx.update(entries).set({ data: JSON.stringify(after), actor: current.id })
+          .where(and(eq(entries.id, partId), eq(entries.kind, kind), eq(entries.organizationId, organizationId)));
+        await tx.insert(entries).values({ id, kind: 'audit', data: JSON.stringify({ recordId: partId, before, after }), created, actor: current.id, organizationId });
+      });
+      return json({ ok: true, id: partId });
+    }
+
     if (action === 'part') {
       const name = text('name'), code = text('code').toUpperCase(), unit = text('unit');
       const minimum = Number(values.minimum || 0);
       if (!name || !code || !UNITS.includes(unit)) return fail('Informe nome, código e unidade da peça.');
       if (!Number.isFinite(minimum) || minimum < 0 || minimum > 1000000 || Math.abs(minimum * 1000 - Math.round(minimum * 1000)) > 1e-6) return fail('Estoque mínimo inválido.');
-      if (all.some((x) => x.kind === 'workshop_part' && x.code === code)) return fail('Já existe uma peça com esse código.');
+      if (all.some((x) => x.kind === 'workshop_part' && x.code === code && !x.deleted)) return fail('Já existe uma peça com esse código.');
       const v = { name, code, unit, minimumUnits: Math.round(minimum * 1000), note: text('note') };
       await db.transaction(async (tx) => {
         await tx.insert(entries).values(record(v));
@@ -56,6 +71,7 @@ export async function POST(req: Request) {
     if (action === 'return') {
       const out = all.find((x) => x.kind === 'workshop_out' && x.id === text('outId'));
       if (!out) return fail('Selecione a saída que teve sobra.');
+      if (all.some((x) => x.kind === 'workshop_part' && x.id === out.partId && x.deleted)) return fail('Esta peça foi excluída do estoque e não recebe mais devoluções.');
       const units = thousandths('quantity');
       if (!units) return fail('Informe a quantidade devolvida, positiva e com até três casas decimais.');
       const date = text('date');
@@ -80,7 +96,7 @@ export async function POST(req: Request) {
       return json({ ok: true, id });
     }
 
-    const part = all.find((x) => x.kind === 'workshop_part' && x.id === text('partId'));
+    const part = all.find((x) => x.kind === 'workshop_part' && x.id === text('partId') && !x.deleted);
     const units = thousandths('quantity');
     if (!part || !units) return fail('Selecione uma peça e uma quantidade positiva com até três casas decimais.');
     const date = text('date');
