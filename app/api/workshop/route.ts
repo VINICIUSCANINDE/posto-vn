@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     if (!organizationId) return fail('O acesso master usa o painel de empresas.', 403);
 
     const { action, values } = (await req.json().catch(() => ({}))) as { action?: string; values?: Rec };
-    if (!action || !['part', 'in', 'plan', 'out'].includes(action) || !values || typeof values !== 'object') return fail('Operação inválida.');
+    if (!action || !['part', 'in', 'plan', 'out', 'return'].includes(action) || !values || typeof values !== 'object') return fail('Operação inválida.');
     const text = (key: string) => String(values[key] ?? '').trim().slice(0, 200);
     const thousandths = (key: string) => {
       const n = Number(values[key]);
@@ -49,6 +49,33 @@ export async function POST(req: Request) {
       await db.transaction(async (tx) => {
         await tx.insert(entries).values(record(v));
         await tx.insert(workshopCounters).values({ id: `part:${id}`, units: 0 });
+      });
+      return json({ ok: true, id });
+    }
+
+    if (action === 'return') {
+      const out = all.find((x) => x.kind === 'workshop_out' && x.id === text('outId'));
+      if (!out) return fail('Selecione a saída que teve sobra.');
+      const units = thousandths('quantity');
+      if (!units) return fail('Informe a quantidade devolvida, positiva e com até três casas decimais.');
+      const date = text('date');
+      if (!validDate(date, false) || date < out.date) return fail('A data da devolução precisa estar entre a data da saída e hoje.');
+      const returnedBy = text('returnedBy');
+      if (!returnedBy) return fail('Informe quem devolveu a peça.');
+      const returned = all.filter((x) => x.kind === 'workshop_return' && x.outId === out.id).reduce((sum, x) => sum + x.quantityUnits, 0);
+      const v = {
+        outId: out.id, partId: out.partId, part: out.part, code: out.code, unit: out.unit, quantityUnits: units, date,
+        vehicleId: out.vehicleId, vehicle: out.vehicle, plate: out.plate, institution: out.institution,
+        returnedBy, note: text('note'), responsible: current.name,
+      };
+      await db.transaction(async (tx) => {
+        // Saldo devolvível da saída: nasce na primeira devolução e só diminui, com baixa condicional atômica.
+        await tx.insert(workshopCounters).values({ id: `out:${out.id}`, units: out.quantityUnits - returned }).onConflictDoNothing();
+        const left = await tx.update(workshopCounters).set({ units: sql`${workshopCounters.units} - ${units}` })
+          .where(sql`${workshopCounters.id} = ${`out:${out.id}`} and ${workshopCounters.units} >= ${units}`).returning();
+        if (!left.length) throw new Conflict('A devolução passa do que sobrou desta saída.');
+        await tx.update(workshopCounters).set({ units: sql`${workshopCounters.units} + ${units}` }).where(eq(workshopCounters.id, `part:${out.partId}`));
+        await tx.insert(entries).values(record(v));
       });
       return json({ ok: true, id });
     }

@@ -3,16 +3,17 @@
 ## Navegação
 Acesso pelo menu Oficina no painel administrativo e na área do colaborador, com quatro abas:
 - Estoque: peças, códigos, unidade, saldo, mínimo e uso previsto pendente.
-- Entradas e saídas: histórico de movimentações, fornecedor/documento ou veículo/recebedor.
+- Entradas e saídas: histórico de entradas, saídas e devoluções de sobra, com fornecedor/documento ou veículo/recebedor.
 - Uso previsto: peças necessárias por veículo, quantidade prevista, entregue e pendente.
-- Veículos atendidos: peças efetivamente entregues, placa, instituição, data e nome de quem recebeu.
+- Veículos atendidos: peças entregues a cada veículo, quanto voltou como sobra e quanto foi realmente usado, com placa, instituição, data e nome de quem recebeu.
 
 ## Operação
 1. Cadastrar a peça com código/referência, nome, unidade e estoque mínimo.
 2. Registrar uma entrada para adicionar estoque, informando quantidade, data e, opcionalmente, fornecedor, documento e custo unitário.
 3. Planejar o uso de uma peça em um veículo cadastrado. Isso registra uma necessidade; não reserva nem baixa o estoque.
 4. Registrar a saída/entrega, informando peça, veículo, quantidade, data e nome de quem recebeu. Pode ser vinculada ao planejamento ou realizada diretamente.
-5. Conferir o saldo e o histórico. Entregas parciais mantêm a quantidade ainda pendente no planejamento.
+5. Se nem tudo foi usado, devolver a sobra: em Veículos atendidos (ou no botão Devolver sobra), escolher a saída, informar a quantidade que sobrou, a data e quem devolveu. A sobra volta ao estoque da peça.
+6. Conferir o saldo e o histórico. Entregas parciais mantêm a quantidade ainda pendente no planejamento.
 
 As consultas aceitam busca por peça, código, placa ou recebedor, filtro por veículo nas abas pertinentes e exportação CSV da consulta atual.
 
@@ -22,6 +23,7 @@ As consultas aceitam busca por peça, código, placa ou recebedor, filtro por ve
 - Não permitir estoque negativo ou entrega acima da pendência de um planejamento.
 - Validar que a peça e o veículo correspondem ao planejamento escolhido.
 - Nome de quem recebeu obrigatório em cada saída.
+- A devolução fica ligada à saída original: a soma das devoluções nunca passa do que saiu, a data fica entre a saída e hoje, e o nome de quem devolveu é obrigatório. O saldo devolvível de cada saída é um contador (`out:<id>`) com baixa condicional, seguro contra envios simultâneos. A devolução não reabre o uso previsto.
 - Movimentações mantêm a identificação histórica da peça, veículo e instituição, além do responsável pelo registro.
 - Entradas e saídas confirmadas não são editadas ou apagadas nesta versão.
 - Requer internet. Não há confirmação de entrega offline, assinatura digital ou comprovação de instalação da peça.

@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     const admin = current.role === 'admin' && new URL(req.url).searchParams.get('view') !== 'attendant';
     const lastKm: Record<string, number> = {};
     for (const r of all) if (r.kind === 'fill' && (lastKm[r.vehicleId] ?? -1) < r.km) lastKm[r.vehicleId] = r.km;
-    const shared = ['institution', 'vehicle', 'fuel', 'workshop_part', 'workshop_in', 'workshop_plan', 'workshop_out'];
+    const shared = ['institution', 'vehicle', 'fuel', 'workshop_part', 'workshop_in', 'workshop_plan', 'workshop_out', 'workshop_return'];
     const data = all
       .filter((r) => r.kind !== 'audit' && r.kind !== 'member' && (admin || shared.includes(r.kind) || (r.kind === 'fill' && r.actorId === current.id)))
       .map((r) => r.kind === 'institution' && !admin ? { id: r.id, kind: r.kind, name: r.name }

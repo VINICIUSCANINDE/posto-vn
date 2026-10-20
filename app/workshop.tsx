@@ -1,23 +1,23 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Car, CheckCircle2, ClipboardList, Download, Package, Plus, RefreshCw, X } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Car, CheckCircle2, ClipboardList, Download, Package, Plus, RefreshCw, Undo2, X } from 'lucide-react';
 import { Card, Counter } from '../components/brand';
 import { Dialog } from '../components/dialog';
 import { InlineSelect, Input, Select, SearchInput } from '../components/form';
 import { Toolbar } from '../components/toolbar';
 import { collectErrors, dateBR, request, today, type Row, focusField } from './request';
 
-type Action = 'part' | 'in' | 'plan' | 'out';
+type Action = 'part' | 'in' | 'plan' | 'out' | 'return';
 type Tab = 'stock' | 'movements' | 'plans' | 'received';
 
 const qty = (units: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format((units || 0) / 1000);
-const ACTION_TITLES: Record<Action, string> = { part: 'Cadastrar peça', in: 'Registrar entrada de peças', plan: 'Planejar uso no veículo', out: 'Registrar entrega / saída' };
+const ACTION_TITLES: Record<Action, string> = { part: 'Cadastrar peça', in: 'Registrar entrada de peças', plan: 'Planejar uso no veículo', out: 'Registrar entrega / saída', return: 'Devolver sobra ao estoque' };
 const TABS: { id: Tab; label: string; title: string; description: string }[] = [
   { id: 'stock', label: 'Estoque', title: 'Estoque de peças', description: 'Saldos atualizados a cada entrada e saída registrada.' },
-  { id: 'movements', label: 'Entradas e saídas', title: 'Entradas e saídas', description: 'Histórico de movimentações do estoque.' },
+  { id: 'movements', label: 'Entradas e saídas', title: 'Entradas e saídas', description: 'Entradas, saídas e devoluções de sobra ao estoque.' },
   { id: 'plans', label: 'Uso previsto', title: 'Peças previstas por veículo', description: 'O planejamento não retira nem reserva peças. A baixa acontece na entrega.' },
-  { id: 'received', label: 'Veículos atendidos', title: 'Peças recebidas pelos veículos', description: 'Rastreie o veículo, a peça entregue e quem a recebeu.' },
+  { id: 'received', label: 'Veículos atendidos', title: 'Peças recebidas pelos veículos', description: 'O que cada veículo recebeu, o que voltou como sobra e o que foi realmente usado.' },
 ];
 const UNITS = ['un', 'jogo', 'kit', 'L', 'kg', 'm'];
 
@@ -34,13 +34,18 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
   const lock = useRef(false);
 
   const rows = (kind: string) => data.filter((x) => x.kind === `workshop_${kind}`);
-  const parts = rows('part'), plans = rows('plan'), ins = rows('in'), outs = rows('out');
+  const parts = rows('part'), plans = rows('plan'), ins = rows('in'), outs = rows('out'), returns = rows('return');
+  // Quanto de cada saída já voltou ao estoque; o que sobra pode ser devolvido.
+  const returnedOf = (outId: string) => returns.filter((x) => x.outId === outId).reduce((sum, x) => sum + x.quantityUnits, 0);
+  const returnable = (o: Row) => o.quantityUnits - returnedOf(o.id);
+  const openOuts = outs.filter((o) => returnable(o) > 0).sort((a, b) => b.created.localeCompare(a.created));
+  const returningOut = outs.find((x) => x.id === form.outId);
   const vehicles = data.filter((x) => x.kind === 'vehicle');
   const part = parts.find((x) => x.id === form.partId);
   const destination = vehicles.find((x) => x.id === form.vehicleId);
-  const movements: Row[] = [...ins.map((x): Row => ({ ...x, direction: 'in' })), ...outs.map((x): Row => ({ ...x, direction: 'out' }))].sort((a, b) => b.created.localeCompare(a.created));
+  const movements: Row[] = [...ins.map((x): Row => ({ ...x, direction: 'in' })), ...outs.map((x): Row => ({ ...x, direction: 'out' })), ...returns.map((x): Row => ({ ...x, direction: 'return' }))].sort((a, b) => b.created.localeCompare(a.created));
   const q = query.trim().toLowerCase();
-  const matches = (x: Row) => `${x.name || x.part || ''} ${x.code || ''} ${x.plate || ''} ${x.vehicle || ''} ${x.institution || ''} ${x.receiver || ''}`.toLowerCase().includes(q) && (!vehicleFilter || x.vehicleId === vehicleFilter);
+  const matches = (x: Row) => `${x.name || x.part || ''} ${x.code || ''} ${x.plate || ''} ${x.vehicle || ''} ${x.institution || ''} ${x.receiver || ''} ${x.returnedBy || ''}`.toLowerCase().includes(q) && (!vehicleFilter || x.vehicleId === vehicleFilter);
   const openPlans = plans.filter((x) => x.remainingUnits > 0);
   const pendingPlates = (partId: string) => Array.from(new Set(plans.filter((p) => p.partId === partId && p.remainingUnits > 0).map((p) => p.plate)));
   const partPlans = plans.filter((x) => x.partId === form.partId && x.vehicleId === form.vehicleId && x.remainingUnits > 0);
@@ -72,7 +77,8 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
     setError('');
     try {
       await request('/api/workshop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, values: form }) }, 15000);
-      setNotice(action === 'out' ? `Saída registrada para a placa ${destination?.plate}. Estoque e recebimento atualizados.`
+      setNotice(action === 'return' ? `Devolução registrada: ${form.quantity} ${returningOut?.unit ?? ''} de ${returningOut?.part ?? 'peça'} voltaram ao estoque.`
+        : action === 'out' ? `Saída registrada para a placa ${destination?.plate}. Estoque e recebimento atualizados.`
         : action === 'in' ? 'Entrada registrada. Estoque atualizado.'
         : action === 'plan' ? `Uso previsto registrado para a placa ${destination?.plate}. Nenhuma peça saiu do estoque.`
         : 'Peça cadastrada. Registre uma entrada para formar o estoque.');
@@ -90,12 +96,12 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
     const list = tab === 'stock' ? parts.filter(matches) : tab === 'plans' ? plans.filter(matches) : tab === 'received' ? outs.filter(matches) : movements.filter(matches);
     const header = tab === 'stock' ? ['Código', 'Peça', 'Unidade', 'Saldo', 'Mínimo', 'Placas com uso previsto']
       : tab === 'plans' ? ['Placa de destino', 'Veículo', 'Peça', 'Previsto', 'Entregue', 'Pendente', 'Data prevista']
-      : tab === 'received' ? ['Data', 'Placa de destino', 'Veículo', 'Peça', 'Quantidade', 'Recebedor', 'Instituição']
-      : ['Data', 'Movimento', 'Peça', 'Quantidade', 'Placa de destino', 'Veículo de destino', 'Fornecedor / recebedor', 'Documento'];
+      : tab === 'received' ? ['Data', 'Placa de destino', 'Veículo', 'Peça', 'Entregue', 'Devolvido', 'Usado', 'Recebedor', 'Instituição']
+      : ['Data', 'Movimento', 'Peça', 'Quantidade', 'Placa de destino', 'Veículo de destino', 'Fornecedor / recebedor / quem devolveu', 'Documento'];
     const body = list.map((x) => tab === 'stock' ? [x.code, x.name, x.unit, qty(x.balanceUnits), qty(x.minimumUnits), pendingPlates(x.id).join(', ')]
       : tab === 'plans' ? [x.plate, x.vehicle, x.part, qty(x.quantityUnits), qty(x.quantityUnits - x.remainingUnits), qty(x.remainingUnits), x.date]
-      : tab === 'received' ? [x.date, x.plate, x.vehicle, x.part, `${qty(x.quantityUnits)} ${x.unit}`, x.receiver, x.institution]
-      : [x.date, x.direction === 'in' ? 'Entrada' : 'Saída', x.part, `${qty(x.quantityUnits)} ${x.unit}`, x.plate || '', x.vehicle || '', x.supplier || x.receiver || '', x.document || '']);
+      : tab === 'received' ? [x.date, x.plate, x.vehicle, x.part, `${qty(x.quantityUnits)} ${x.unit}`, `${qty(returnedOf(x.id))} ${x.unit}`, `${qty(returnable(x))} ${x.unit}`, x.receiver, x.institution]
+      : [x.date, x.direction === 'in' ? 'Entrada' : x.direction === 'return' ? 'Devolução' : 'Saída', x.part, `${x.direction === 'out' ? '-' : ''}${qty(x.quantityUnits)} ${x.unit}`, x.plate || '', x.vehicle || '', x.supplier || x.receiver || x.returnedBy || '', x.document || '']);
     const esc = (v: unknown) => { const s = String(v ?? ''); return `"${/^[=+\-@\t\r]/.test(s) ? "'" : ''}${s.replace(/"/g, '""')}"`; };
     const url = URL.createObjectURL(new Blob(['﻿' + [header, ...body].map((r) => r.map(esc).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
@@ -126,6 +132,7 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
         <button className="btn" onClick={() => open('part')}><Plus size={16} aria-hidden="true" /> Cadastrar peça</button>
         <button className="btn" onClick={() => open('in')}><ArrowDownLeft size={16} aria-hidden="true" /> Entrada</button>
         <button className="btn" onClick={() => open('plan')}><ClipboardList size={16} aria-hidden="true" /> Planejar uso</button>
+        <button className="btn" onClick={() => open('return', { fromToolbar: true })} disabled={!openOuts.length}><Undo2 size={16} aria-hidden="true" /> Devolver sobra</button>
         <button className="btn btn-primary" onClick={() => open('out')}><ArrowUpRight size={16} aria-hidden="true" /> Registrar saída</button>
       </>}>
         <SearchInput label="Buscar na oficina" placeholder="Peça, código, placa ou recebedor" value={query} onValueChange={setQuery} />
@@ -207,16 +214,18 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
         {tab === 'received' && (outs.filter(matches).length ? (
           <div className="table-wrap">
             <table className="data-table">
-              <thead><tr><th scope="col">Placa de destino</th><th scope="col">Peça recebida</th><th scope="col" className="num">Quantidade</th><th scope="col">Entrega</th><th scope="col">Quem recebeu</th><th scope="col">Registrado por</th></tr></thead>
+              <thead><tr><th scope="col">Placa de destino</th><th scope="col">Peça recebida</th><th scope="col" className="num">Entregue</th><th scope="col" className="num">Devolvido</th><th scope="col" className="num">Usado</th><th scope="col">Entrega</th><th scope="col">Quem recebeu</th><th scope="col"><span className="sr-only">Ações</span></th></tr></thead>
               <tbody>
                 {outs.filter(matches).sort((a, b) => b.created.localeCompare(a.created)).map((p) => (
                   <tr key={p.id}>
                     <td data-label="Placa"><span className="plate">{p.plate}</span><small>{p.vehicle} · {p.institution}</small></td>
                     <td data-label="Peça">{p.part}<small>{p.code}</small></td>
-                    <td data-label="Quantidade" className="num strong">{qty(p.quantityUnits)} {p.unit}</td>
-                    <td data-label="Entrega">{dateBR(p.date)}</td>
+                    <td data-label="Entregue" className="num">{qty(p.quantityUnits)} {p.unit}</td>
+                    <td data-label="Devolvido" className="num">{returnedOf(p.id) ? `${qty(returnedOf(p.id))} ${p.unit}` : '—'}</td>
+                    <td data-label="Usado" className="num strong">{qty(returnable(p))} {p.unit}</td>
+                    <td data-label="Entrega">{dateBR(p.date)}<small>{p.responsible}</small></td>
                     <td data-label="Quem recebeu">{p.receiver}{p.note && <small>{p.note}</small>}</td>
-                    <td data-label="Registrado por">{p.responsible}</td>
+                    <td className="row-action">{returnable(p) > 0 && <button className="btn btn-sm" onClick={() => open('return', { outId: p.id })}><Undo2 size={14} aria-hidden="true" /> Devolver sobra</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -231,12 +240,12 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
               <tbody>
                 {movements.filter(matches).map((p) => (
                   <tr key={p.id}>
-                    <td data-label="Movimento"><span className={p.direction === 'out' ? 'tag tag-warn' : 'tag tag-brand'}>{p.direction === 'in' ? 'Entrada' : 'Saída'}</span></td>
+                    <td data-label="Movimento"><span className={p.direction === 'out' ? 'tag tag-warn' : 'tag tag-brand'}>{p.direction === 'in' ? 'Entrada' : p.direction === 'return' ? 'Devolução' : 'Saída'}</span></td>
                     <td data-label="Peça">{p.part}<small>{p.code}</small></td>
-                    <td data-label="Quantidade" className="num strong">{p.direction === 'in' ? '+' : '−'}{qty(p.quantityUnits)} {p.unit}</td>
+                    <td data-label="Quantidade" className="num strong">{p.direction === 'out' ? '−' : '+'}{qty(p.quantityUnits)} {p.unit}</td>
                     <td data-label="Data">{dateBR(p.date)}</td>
-                    <td data-label="Placa">{p.direction === 'out' ? <><span className="plate">{p.plate}</span><small>{p.vehicle}</small></> : '—'}</td>
-                    <td data-label="Origem / destino">{p.direction === 'in' ? (p.supplier || 'Fornecedor não informado') : `Recebeu: ${p.receiver}`}{p.direction === 'in' && p.document && <small>{p.document}</small>}</td>
+                    <td data-label="Placa">{p.direction !== 'in' ? <><span className="plate">{p.plate}</span><small>{p.vehicle}</small></> : '—'}</td>
+                    <td data-label="Origem / destino">{p.direction === 'in' ? (p.supplier || 'Fornecedor não informado') : p.direction === 'return' ? `Sobra devolvida por ${p.returnedBy}` : `Recebeu: ${p.receiver}`}{p.direction === 'in' && p.document && <small>{p.document}</small>}</td>
                     <td data-label="Registrado por">{p.responsible}{p.note && <small>{p.note}</small>}</td>
                   </tr>
                 ))}
@@ -250,7 +259,27 @@ export default function Workshop({ data, onRefresh }: { data: Row[]; onRefresh: 
         <Dialog title={ACTION_TITLES[action]} onClose={() => setAction(null)} busy={busy}>
           <form onSubmit={save} noValidate>
             <fieldset className="form-grid" disabled={busy}>
-              {action === 'part' ? (
+              {action === 'return' ? (
+                <>
+                  {form.fromToolbar ? (
+                    <Select {...field('outId')} label="Saída que teve sobra" placeholder="Selecione a saída" full
+                      options={openOuts.map((o) => ({ value: o.id, label: `${dateBR(o.date)} · ${o.plate} · ${o.part} · pode devolver ${qty(returnable(o))} ${o.unit}` }))} />
+                  ) : null}
+                  {returningOut && (
+                    <div className="form-summary field-full">
+                      <span>{returningOut.part} · <span className="plate">{returningOut.plate}</span><br />
+                        <small>Saiu {qty(returningOut.quantityUnits)} {returningOut.unit} em {dateBR(returningOut.date)}{returnedOf(returningOut.id) ? ` · já voltaram ${qty(returnedOf(returningOut.id))} ${returningOut.unit}` : ''}</small></span>
+                      <strong>até {qty(returnable(returningOut))} {returningOut.unit}</strong>
+                    </div>
+                  )}
+                  <Input {...field('quantity')} label={`Quantidade que sobrou${returningOut ? ` (${returningOut.unit})` : ''}`} type="number" min={0.001}
+                    max={returningOut ? returnable(returningOut) / 1000 : undefined} step={0.001} inputMode="decimal" />
+                  <Input {...field('date')} label="Data da devolução" type="date" min={returningOut?.date} max={today()} />
+                  <Input {...field('returnedBy')} label="Quem devolveu" maxLength={200} full />
+                  <Input {...field('note')} label="Observação" maxLength={200} optional full />
+                  <p className="hint field-full">A sobra volta para o estoque da peça. A saída original continua no histórico, com o que foi devolvido e o que foi realmente usado.</p>
+                </>
+              ) : action === 'part' ? (
                 <>
                   <Input {...field('name')} label="Nome da peça" maxLength={200} full />
                   <Input {...field('code')} label="Código / referência" maxLength={60} />
