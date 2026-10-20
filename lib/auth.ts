@@ -31,10 +31,11 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       mustChangePassword: { type: 'boolean', defaultValue: false, input: false },
+      organizationId: { type: 'string', required: false, input: false },
     },
   },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
-  plugins: [admin({ ac, roles, defaultRole: 'attendant', adminRoles: ['admin'] }), nextCookies()],
+  plugins: [admin({ ac, roles, defaultRole: 'attendant', adminRoles: ['master'] }), nextCookies()],
 });
 
 export type Session = typeof auth.$Infer.Session;

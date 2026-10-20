@@ -500,7 +500,7 @@ export default function Dashboard() {
       <aside id="menu-lateral" className={navOpen ? 'sidebar is-open' : 'sidebar'} aria-label="Menu principal">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true"><Fuel size={18} /></span>
-          <span><strong>Controle de Transporte</strong><small>Gestão de abastecimentos</small></span>
+          <span><strong>Controle de Transporte</strong><small>{user.organization || 'Gestão de abastecimentos'}</small></span>
           <button className="icon-btn nav-close" aria-label="Fechar menu" onClick={() => setNavOpen(false)}><X size={18} aria-hidden="true" /></button>
         </div>
         <nav aria-label="Seções">

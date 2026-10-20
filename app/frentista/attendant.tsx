@@ -220,7 +220,7 @@ export default function Attendant() {
       <aside className="sidebar colab-sidebar" aria-label="Menu do colaborador">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true"><Fuel size={18} /></span>
-          <span><strong>Controle de Transporte</strong><small>Área do colaborador</small></span>
+          <span><strong>Controle de Transporte</strong><small>{user.organization ? `Colaborador · ${user.organization}` : 'Área do colaborador'}</small></span>
         </div>
         <nav aria-label="Seções">
           <ul>

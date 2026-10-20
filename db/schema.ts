@@ -1,8 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
+import { organization } from './organization-schema';
 
 export * from './auth-schema';
+export * from './organization-schema';
 
 export const entries = pgTable('entries', {
   id: text('id').primaryKey(),
@@ -10,7 +12,8 @@ export const entries = pgTable('entries', {
   data: text('data').notNull(),
   created: text('created').notNull(),
   actor: text('actor').notNull(),
-}, (t) => [index('entries_kind_idx').on(t.kind)]);
+  organizationId: text('organization_id').notNull().references(() => organization.id),
+}, (t) => [index('entries_kind_idx').on(t.kind), index('entries_org_kind_idx').on(t.organizationId, t.kind)]);
 
 // Saldos em milésimos inteiros (sem deriva de arredondamento); o CHECK torna saídas concorrentes atômicas.
 export const workshopCounters = pgTable('workshop_counters', {

@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { organization } from "./organization-schema";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -17,6 +18,8 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   mustChangePassword: boolean("must_change_password").default(false),
+  // Nulo apenas para o acesso master, que não pertence a nenhuma empresa.
+  organizationId: text("organization_id").references(() => organization.id),
 });
 
 export const session = pgTable(

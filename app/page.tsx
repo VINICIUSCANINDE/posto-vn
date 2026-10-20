@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const current = await requireUser('/entrar');
+  if (current.role === 'master') redirect('/master');
   if (current.role !== 'admin') redirect('/frentista');
   return <Dashboard />;
 }

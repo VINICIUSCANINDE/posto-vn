@@ -3,7 +3,9 @@ import { adminAc, defaultStatements, userAc } from 'better-auth/plugins/admin/ac
 
 export const ac = createAccessControl(defaultStatements);
 
+// O master administra a plataforma; o admin de empresa gerencia a própria equipe pelas rotas do sistema.
 export const roles = {
-  admin: ac.newRole({ ...adminAc.statements }),
+  master: ac.newRole({ ...adminAc.statements }),
+  admin: ac.newRole({ ...userAc.statements }),
   attendant: ac.newRole({ ...userAc.statements }),
 };

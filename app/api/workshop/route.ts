@@ -19,6 +19,8 @@ export async function POST(req: Request) {
     if (!sameOrigin(req)) return fail('Origem inválida.', 403);
     const current = await getCurrentUser();
     if (!current) return fail('Entre na sua conta.', 401);
+    const organizationId = current.organizationId;
+    if (!organizationId) return fail('O acesso master usa o painel de empresas.', 403);
 
     const { action, values } = (await req.json().catch(() => ({}))) as { action?: string; values?: Rec };
     if (!action || !['part', 'in', 'plan', 'out'].includes(action) || !values || typeof values !== 'object') return fail('Operação inválida.');
@@ -31,10 +33,11 @@ export async function POST(req: Request) {
       /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date + 'T12:00:00Z'))
       && new Date(date + 'T12:00:00Z').toISOString().slice(0, 10) === date && (allowFuture || date <= today());
 
-    const all = (await db.select().from(entries)).map((x) => ({ ...JSON.parse(x.data), id: x.id, kind: x.kind }) as Rec);
+    // Peças, planejamentos e veículos vêm só da empresa do usuário, o que também isola os contadores de estoque.
+    const all = (await db.select().from(entries).where(eq(entries.organizationId, organizationId))).map((x) => ({ ...JSON.parse(x.data), id: x.id, kind: x.kind }) as Rec);
     const id = crypto.randomUUID();
     const created = new Date().toISOString();
-    const record = (data: Rec) => ({ id, kind: `workshop_${action}`, data: JSON.stringify(data), created, actor: current.id });
+    const record = (data: Rec) => ({ id, kind: `workshop_${action}`, data: JSON.stringify(data), created, actor: current.id, organizationId });
 
     if (action === 'part') {
       const name = text('name'), code = text('code').toUpperCase(), unit = text('unit');
