@@ -3,6 +3,7 @@
 import { useRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronUp, Eye, EyeOff, Search } from 'lucide-react';
 import { Select as RadixSelect } from 'radix-ui';
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 
 type FieldBase = {
   name: string;
@@ -147,6 +148,51 @@ export function Select({ name, label, error, hint, optional, full, options, valu
         describedBy={describedBy(name, error, hint)}
         onValueChange={onValueChange}
       />
+    </Field>
+  );
+}
+
+// Select com campo de texto: digitar filtra as opções pelo rótulo (sem diferenciar maiúsculas nem acentos).
+export function SearchSelect({ name, label, error, hint, optional, full, options, value, placeholder = 'Digite para buscar', required, disabled, onValueChange }: SelectProps) {
+  const input = useRef<HTMLInputElement>(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const labels = new Map(options.map((o) => [o.value, o.label]));
+  return (
+    <Field name={name} label={label} error={error} hint={hint} optional={optional} full={full}>
+      <BaseCombobox.Root
+        items={options.map((o) => o.value)}
+        value={value || null}
+        onValueChange={(v) => onValueChange?.(v ?? '')}
+        itemToStringLabel={(v: string) => labels.get(v) ?? ''}
+        onOpenChange={(open) => { if (open) setContainer(input.current?.closest('dialog') ?? null); }}
+        name={name}
+        required={required ?? !optional}
+        disabled={disabled}
+        autoHighlight
+      >
+        <div className="combo">
+          <BaseCombobox.Input ref={input} id={`f-${name}`} placeholder={placeholder} autoComplete="off"
+            aria-invalid={error ? true : undefined} aria-describedby={describedBy(name, error, hint)} />
+          <BaseCombobox.Trigger className="combo-trigger" aria-label="Mostrar opções">
+            <ChevronDown size={16} aria-hidden="true" />
+          </BaseCombobox.Trigger>
+        </div>
+        <BaseCombobox.Portal container={container ?? undefined}>
+          <BaseCombobox.Positioner className="combo-positioner" sideOffset={4} collisionPadding={8}>
+            <BaseCombobox.Popup className="select-content combo-popup">
+              <BaseCombobox.Empty className="combo-empty">Nenhum resultado.</BaseCombobox.Empty>
+              <BaseCombobox.List className="select-viewport combo-list">
+                {(v: string) => (
+                  <BaseCombobox.Item key={v} value={v} className="select-item">
+                    {labels.get(v)}
+                    <BaseCombobox.ItemIndicator className="select-check"><Check size={16} aria-hidden="true" /></BaseCombobox.ItemIndicator>
+                  </BaseCombobox.Item>
+                )}
+              </BaseCombobox.List>
+            </BaseCombobox.Popup>
+          </BaseCombobox.Positioner>
+        </BaseCombobox.Portal>
+      </BaseCombobox.Root>
     </Field>
   );
 }

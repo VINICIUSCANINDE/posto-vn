@@ -7,7 +7,7 @@ import {
 import { request, RequestError, type Row, money, num, today, dateBR, monthLabel, recentMonths, collectErrors, focusField } from './request';
 import { Card, Counter, Reveal } from '../components/brand';
 import { Dialog } from '../components/dialog';
-import { InlineSelect, Input, OptionCards, SearchInput, Select } from '../components/form';
+import { InlineSelect, Input, OptionCards, SearchInput, SearchSelect, Select } from '../components/form';
 import { Toolbar } from '../components/toolbar';
 import { InviteLink } from '../components/invite-link';
 import { authClient } from '../lib/auth-client';
@@ -377,7 +377,7 @@ export default function Dashboard() {
 
   const modalBody = modal && (modal.kind === 'fill' ? (
     <>
-      <Select {...bind('vehicleId')} label="Veículo" placeholder="Selecione o veículo" full
+      <SearchSelect {...bind('vehicleId')} label="Veículo" placeholder="Digite a placa ou o modelo" full
         options={toOptions(vehicles, (x) => `${x.plate} · ${x.name}`)}
         hint={formVehicle ? `${instById.get(formVehicle.institutionId)?.name ?? 'Sem instituição'}${formVehicle.kmPerLiter ? ` · consumo esperado ${num(formVehicle.kmPerLiter, 2)} km/L` : ''}` : undefined} />
       <div className="field-full">
