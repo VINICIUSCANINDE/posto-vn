@@ -1,21 +1,23 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench } from 'lucide-react';
+import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench, Ban, X, Cylinder } from 'lucide-react';
 import { request, RequestError, type Row, money, num, today, dateBR, timeBR, collectErrors, focusField } from '../request';
 import { Card, Counter, Reveal } from '../../components/brand';
 import { Dialog } from '../../components/dialog';
-import { Input, OptionCards, SearchInput, Select } from '../../components/form';
+import { Input, OptionCards, SearchInput, SearchSelect } from '../../components/form';
 import { Toolbar } from '../../components/toolbar';
 import { authClient } from '../../lib/auth-client';
 import { ConsumptionPreview, OdometerBadge } from '../../components/consumption';
 import Workshop from '../workshop';
+import { cancelNote, isValidFill } from '../../lib/fills';
+import Tank from '../tank';
 
 const DRAFT_KEY = 'controle-transporte:rascunho';
 const PAGE_SIZE = 20;
 const fresh = () => ({ vehicleId: '', fuelId: '', date: today(), liters: '', km: '', driver: '', note: '' });
 type Draft = ReturnType<typeof fresh>;
-type View = 'home' | 'history' | 'workshop';
+type View = 'home' | 'history' | 'workshop' | 'tank';
 
 async function signOut() {
   await authClient.signOut();
@@ -35,6 +37,12 @@ export default function Attendant() {
   const [view, setView] = useState<View>('home');
   const [query, setQuery] = useState('');
   const [shown, setShown] = useState(PAGE_SIZE);
+  const [canceling, setCanceling] = useState<Row | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [reasonError, setReasonError] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const locked = useRef(false);
   const inFlight = useRef(false);
   const latest = useRef(0);
@@ -117,8 +125,10 @@ export default function Attendant() {
   const recent = data.filter((x) => x.kind === 'fill').sort((a, b) => b.created.localeCompare(a.created));
   const q = query.trim().toLowerCase();
   const filtered = q ? recent.filter((x) => `${x.plate} ${x.vehicle} ${instName(x)}`.toLowerCase().includes(q)) : recent;
-  const day = recent.filter((x) => x.date === today());
-  const monthFills = recent.filter((x) => x.date.startsWith(today().slice(0, 7)));
+  // Cancelados continuam na lista, marcados, mas não entram nas contagens do dia e do mês.
+  const valid = recent.filter(isValidFill);
+  const day = valid.filter((x) => x.date === today());
+  const monthFills = valid.filter((x) => x.date.startsWith(today().slice(0, 7)));
   const sum = (list: Row[], key: string) => list.reduce((a, b) => a + (b[key] || 0), 0);
   const total = Math.round(Number(form.liters || 0) * (fuel?.priceCents || 0));
   const hasDraft = Boolean(form.vehicleId || form.liters || form.km);
@@ -175,12 +185,48 @@ export default function Attendant() {
     }
   }
 
+  function openCancel(fill: Row) {
+    setCancelReason('');
+    setCancelError('');
+    setReasonError('');
+    setNotice('');
+    setCanceling(fill);
+  }
+
+  async function cancelFill(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!canceling || cancelBusy) return;
+    const formEl = e.currentTarget;
+    const errors = collectErrors(formEl);
+    if (errors.reason) { setReasonError(errors.reason); focusField(formEl, 'reason'); return; }
+    setCancelBusy(true);
+    setCancelError('');
+    try {
+      await request('/api/fill-cancel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: canceling.id, reason: cancelReason }),
+      }, 15000);
+      formEl.closest('dialog')?.close();
+      await load(true);
+      setNotice(`Abastecimento de ${canceling.plate} cancelado.`);
+    } catch (err) {
+      setCancelError((err as RequestError).message);
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   const fillItem = (x: Row) => (
-    <li key={x.id}>
+    <li key={x.id} className={x.canceled ? 'is-canceled' : undefined}>
       <div>
-        <p className="record-main"><span className="plate">{x.plate}</span> {x.vehicle}</p>
+        <p className="record-main"><span className="plate">{x.plate}</span> {x.vehicle}{x.canceled && <> <span className="tag tag-danger">Cancelado</span></>}</p>
         <p>{instName(x)}</p>
         <p className="record-meta">{dateBR(x.date)} · {timeBR(x.created)} · {x.fuel} · {num(x.liters)} L · {num(x.km, 0)} km</p>
+        {x.canceled ? <p className="cancel-note">{cancelNote(x)}</p> : x.actorId === user?.id && (
+          <div className="row-actions record-actions">
+            <button className="btn btn-sm btn-danger-ghost" onClick={() => openCancel(x)} aria-label={`Cancelar abastecimento de ${x.plate} em ${dateBR(x.date)}`}><Ban size={14} aria-hidden="true" /> Cancelar</button>
+          </div>
+        )}
       </div>
       <strong>{money(x.totalCents)}</strong>
     </li>
@@ -227,6 +273,7 @@ export default function Attendant() {
             <li><button className="nav-item" aria-current={view === 'home' ? 'page' : undefined} onClick={() => go('home')}><Home size={18} aria-hidden="true" />Início</button></li>
             <li><button className="nav-item" aria-current={view === 'history' ? 'page' : undefined} onClick={() => go('history')}><ClipboardList size={18} aria-hidden="true" />Meus lançamentos<span className="nav-count">{recent.length}</span></button></li>
             <li><button className="nav-item" aria-current={view === 'workshop' ? 'page' : undefined} onClick={() => go('workshop')}><Wrench size={18} aria-hidden="true" />Oficina</button></li>
+            <li><button className="nav-item" aria-current={view === 'tank' ? 'page' : undefined} onClick={() => go('tank')}><Cylinder size={18} aria-hidden="true" />Tanque</button></li>
           </ul>
         </nav>
         <div className="sidebar-foot">
@@ -244,6 +291,12 @@ export default function Attendant() {
       </aside>
 
       <main id="conteudo" className="content colab-content" tabIndex={-1}>
+        {notice && (
+          <p className="notice notice-success" role="status">
+            <CheckCircle2 size={18} aria-hidden="true" /> {notice}
+            <button className="icon-btn" aria-label="Fechar aviso" onClick={() => setNotice('')}><X size={16} aria-hidden="true" /></button>
+          </p>
+        )}
         {connection && <p className="notice notice-warn colab-offline" role="alert"><WifiOff size={16} aria-hidden="true" /> {connection} Os dados podem estar desatualizados.</p>}
 
         {view === 'home' && (
@@ -272,6 +325,25 @@ export default function Attendant() {
                 <div className="empty empty-sm"><p>Você ainda não lançou nenhum abastecimento.</p></div>
               )}
             </Card>
+            {fuels.length > 0 && (
+              <Card className="panel">
+                <div className="panel-head">
+                  <div><h2>Tanque da garagem</h2><p>Saldo por combustível e registro das chegadas</p></div>
+                  <button className="link-btn" onClick={() => go('tank')}>Abrir tanque</button>
+                </div>
+                <ul className="records">
+                  {fuels.map((x) => (
+                    <li key={x.id}>
+                      <div>
+                        <p className="record-main">{x.name}</p>
+                        {x.tankLiters < 0 && <p><span className="tag tag-danger">Abastecido acima do registrado</span></p>}
+                      </div>
+                      <strong>{num(x.tankLiters || 0)} L</strong>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
           </>
         )}
 
@@ -303,6 +375,15 @@ export default function Attendant() {
           </>
         )}
 
+        {view === 'tank' && (
+          <>
+            <header className="page-header">
+              <div><h1>Tanque</h1><p>Saldo do tanque da garagem por combustível e chegadas registradas</p></div>
+            </header>
+            <Tank data={data} onRefresh={() => load(true)} />
+          </>
+        )}
+
         {view === 'workshop' && (
           <>
             <header className="page-header">
@@ -320,6 +401,24 @@ export default function Attendant() {
         <button aria-current={view === 'workshop' ? 'page' : undefined} onClick={() => go('workshop')}><Wrench size={22} aria-hidden="true" /><span>Oficina</span></button>
       </nav>
 
+      {canceling && (
+        <Dialog title="Cancelar abastecimento?" onClose={() => setCanceling(null)} busy={cancelBusy}>
+          <form onSubmit={cancelFill} noValidate>
+            <fieldset className="form-stack" disabled={cancelBusy}>
+              <p><span className="plate">{canceling.plate}</span> <strong>{canceling.vehicle}</strong> · {dateBR(canceling.date)} · {num(canceling.liters)} L · {money(canceling.totalCents)}</p>
+              <Input name="reason" label="Motivo do cancelamento" maxLength={200} autoComplete="off" value={cancelReason} error={reasonError}
+                onValueChange={(v) => { setCancelReason(v); setReasonError(''); }} />
+              <p className="hint">O lançamento continua em Meus lançamentos, marcado como cancelado, e a gestão vê o motivo.</p>
+            </fieldset>
+            {cancelError && <p role="alert" className="notice notice-error">{cancelError}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={cancelBusy}>Voltar</button>
+              <button className="btn btn-danger" disabled={cancelBusy}>{cancelBusy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Cancelando…</> : <><Ban size={16} aria-hidden="true" /> Cancelar abastecimento</>}</button>
+            </div>
+          </form>
+        </Dialog>
+      )}
+
       {fillOpen && (
         <Dialog title={receipt ? 'Comprovante' : 'Novo abastecimento'} onClose={() => setFillOpen(false)} busy={saving} className="fill-modal">
           {receipt ? (
@@ -336,6 +435,11 @@ export default function Attendant() {
                 <div><dt>Odômetro</dt><dd>{num(receipt.km, 0)} km</dd></div>
                 <div className="receipt-total"><dt>Valor</dt><dd>{money(receipt.totalCents)}</dd></div>
               </dl>
+              {receipt.tankLiters < 0 && (
+                <p className="notice notice-error" role="alert">
+                  O tanque de {receipt.fuel} ficou negativo ({num(receipt.tankLiters)} L). Há abastecimentos acima do que foi registrado como chegada. Avise a gestão para conferir.
+                </p>
+              )}
               <div className="receipt-actions">
                 <button className="btn btn-primary btn-lg" onClick={() => setReceipt(null)}><Plus size={18} aria-hidden="true" /> Novo abastecimento</button>
                 <button className="btn btn-lg" onClick={(e) => e.currentTarget.closest('dialog')?.close()}>Fechar</button>
@@ -345,7 +449,7 @@ export default function Attendant() {
             <form className="colab-form" onSubmit={save} noValidate>
               <fieldset className="form-stack" disabled={saving}>
                 {(!vehicles.length || !fuels.length) && <p className="notice notice-warn">A administração precisa cadastrar veículos e combustíveis antes do primeiro lançamento.</p>}
-                <Select {...bind('vehicleId')} label="Veículo" placeholder="Selecione a placa"
+                <SearchSelect {...bind('vehicleId')} label="Veículo" placeholder="Digite a placa ou o modelo"
                   options={vehicles.map((x) => ({ value: x.id, label: `${x.plate} · ${x.name}` }))}
                   hint={vehicle ? institution?.name ?? 'Sem instituição vinculada' : undefined} />
                 <OptionCards name="fuelId" label="Combustível" value={form.fuelId} error={fieldErrors.fuelId} onValueChange={(v) => field('fuelId', v)}

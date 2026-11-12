@@ -78,6 +78,8 @@ pnpm test:integracao   # login, abastecimentos e permissões (22 verificações)
 pnpm test:oficina      # estoque, planejamento, entregas e concorrência (28 verificações)
 ```
 
+`pnpm test:unit` roda sem servidor e sem banco: saldo do tanque e recálculo da média ao cancelar um abastecimento (`tests/unit/`).
+
 Os testes entram com as contas de teste (`TEST_ADMIN_EMAIL`/`TEST_ADMIN_PASSWORD` e `TEST_COLAB_EMAIL`/`TEST_COLAB_PASSWORD`, com padrão nas contas locais), criam registros fictícios e, ao final, removem só o que criaram. **Rode apenas contra um banco de desenvolvimento**, nunca contra o banco com dados reais.
 
 ## Publicação
@@ -96,6 +98,8 @@ Pendente: verificar o domínio de envio no Resend e configurar `RESEND_API_KEY` 
 
 - O preço por litro e os nomes de instituição e veículo ficam gravados em cada abastecimento; mudar o cadastro depois não altera o histórico.
 - Abastecimentos não são editados nem apagados. Alterações de cadastro geram registro de auditoria.
+- Um abastecimento pode ser cancelado com motivo obrigatório: o administrador cancela qualquer um, o colaborador só os próprios. O registro continua no histórico, marcado como cancelado, e sai dos totais, do fechamento, do consumo e do tanque. A média do abastecimento seguinte do veículo é refeita.
+- Tanque da garagem: um saldo por combustível, calculado pelas chegadas registradas menos os abastecimentos válidos. O saldo pode ficar negativo; nesse caso o sistema avisa, mas não bloqueia o lançamento.
 - O odômetro não pode ser menor que o do abastecimento anterior do veículo nem maior que o de um abastecimento posterior.
 - Sem recebimento online, nota fiscal ou integração com bombas.
 - Oficina: estoque nunca negativo, garantido por `CHECK` no banco e baixa em transação. Regras completas em `docs/03-modulo-oficina.md`.

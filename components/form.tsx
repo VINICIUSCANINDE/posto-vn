@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
-import { Check, ChevronDown, ChevronUp, Eye, EyeOff, Search } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Eye, EyeOff, Search, X } from 'lucide-react';
 import { Select as RadixSelect } from 'radix-ui';
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 
@@ -152,47 +152,85 @@ export function Select({ name, label, error, hint, optional, full, options, valu
   );
 }
 
-// Select com campo de texto: digitar filtra as opções pelo rótulo (sem diferenciar maiúsculas nem acentos).
-export function SearchSelect({ name, label, error, hint, optional, full, options, value, placeholder = 'Digite para buscar', required, disabled, onValueChange }: SelectProps) {
+// Caixa de busca do Combobox: digitar filtra as opções pelo rótulo (sem diferenciar maiúsculas nem acentos).
+function ComboBox({ id, name, value, options, placeholder, required, disabled, clearable, invalid, describedBy, label, onValueChange }: {
+  id?: string;
+  name?: string;
+  value: string;
+  options: Option[];
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  clearable?: boolean;
+  invalid?: boolean;
+  describedBy?: string;
+  label?: string;
+  onValueChange?: (value: string) => void;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const labels = new Map(options.map((o) => [o.value, o.label]));
   return (
+    <BaseCombobox.Root
+      items={options.map((o) => o.value)}
+      value={value || null}
+      onValueChange={(v) => onValueChange?.(v ?? '')}
+      itemToStringLabel={(v: string) => labels.get(v) ?? ''}
+      onOpenChange={(open) => { if (open) setContainer(input.current?.closest('dialog') ?? null); }}
+      name={name}
+      required={required}
+      disabled={disabled}
+      autoHighlight
+    >
+      <div className={clearable ? 'combo combo-clearable' : 'combo'}>
+        <BaseCombobox.Input ref={input} id={id} placeholder={placeholder} autoComplete="off"
+          aria-label={label} aria-invalid={invalid || undefined} aria-describedby={describedBy} />
+        {clearable && (
+          <BaseCombobox.Clear className="combo-clear" aria-label="Limpar">
+            <X size={16} aria-hidden="true" />
+          </BaseCombobox.Clear>
+        )}
+        <BaseCombobox.Trigger className="combo-trigger" aria-label="Mostrar opções">
+          <ChevronDown size={16} aria-hidden="true" />
+        </BaseCombobox.Trigger>
+      </div>
+      <BaseCombobox.Portal container={container ?? undefined}>
+        <BaseCombobox.Positioner className="combo-positioner" sideOffset={4} collisionPadding={8}>
+          <BaseCombobox.Popup className="select-content combo-popup">
+            <BaseCombobox.Empty className="combo-empty">Nenhum resultado.</BaseCombobox.Empty>
+            <BaseCombobox.List className="select-viewport combo-list">
+              {(v: string) => (
+                <BaseCombobox.Item key={v} value={v} className="select-item">
+                  {labels.get(v)}
+                  <BaseCombobox.ItemIndicator className="select-check"><Check size={16} aria-hidden="true" /></BaseCombobox.ItemIndicator>
+                </BaseCombobox.Item>
+              )}
+            </BaseCombobox.List>
+          </BaseCombobox.Popup>
+        </BaseCombobox.Positioner>
+      </BaseCombobox.Portal>
+    </BaseCombobox.Root>
+  );
+}
+
+// Select com campo de texto. Se for opcional, mostra um botão para limpar a escolha.
+export function SearchSelect({ name, label, error, hint, optional, full, options, value, placeholder = 'Digite para buscar', required, disabled, onValueChange }: SelectProps) {
+  const isRequired = required ?? !optional;
+  return (
     <Field name={name} label={label} error={error} hint={hint} optional={optional} full={full}>
-      <BaseCombobox.Root
-        items={options.map((o) => o.value)}
-        value={value || null}
-        onValueChange={(v) => onValueChange?.(v ?? '')}
-        itemToStringLabel={(v: string) => labels.get(v) ?? ''}
-        onOpenChange={(open) => { if (open) setContainer(input.current?.closest('dialog') ?? null); }}
+      <ComboBox
+        id={`f-${name}`}
         name={name}
-        required={required ?? !optional}
+        value={value}
+        options={options}
+        placeholder={placeholder}
+        required={isRequired}
         disabled={disabled}
-        autoHighlight
-      >
-        <div className="combo">
-          <BaseCombobox.Input ref={input} id={`f-${name}`} placeholder={placeholder} autoComplete="off"
-            aria-invalid={error ? true : undefined} aria-describedby={describedBy(name, error, hint)} />
-          <BaseCombobox.Trigger className="combo-trigger" aria-label="Mostrar opções">
-            <ChevronDown size={16} aria-hidden="true" />
-          </BaseCombobox.Trigger>
-        </div>
-        <BaseCombobox.Portal container={container ?? undefined}>
-          <BaseCombobox.Positioner className="combo-positioner" sideOffset={4} collisionPadding={8}>
-            <BaseCombobox.Popup className="select-content combo-popup">
-              <BaseCombobox.Empty className="combo-empty">Nenhum resultado.</BaseCombobox.Empty>
-              <BaseCombobox.List className="select-viewport combo-list">
-                {(v: string) => (
-                  <BaseCombobox.Item key={v} value={v} className="select-item">
-                    {labels.get(v)}
-                    <BaseCombobox.ItemIndicator className="select-check"><Check size={16} aria-hidden="true" /></BaseCombobox.ItemIndicator>
-                  </BaseCombobox.Item>
-                )}
-              </BaseCombobox.List>
-            </BaseCombobox.Popup>
-          </BaseCombobox.Positioner>
-        </BaseCombobox.Portal>
-      </BaseCombobox.Root>
+        clearable={!isRequired}
+        invalid={Boolean(error)}
+        describedBy={describedBy(name, error, hint)}
+        onValueChange={onValueChange}
+      />
     </Field>
   );
 }
@@ -237,6 +275,16 @@ export function InlineSelect({ label, value, options, onValueChange }: { label: 
   return (
     <div className="select-inline">
       <SelectBox label={label} value={value} options={options.filter((o) => o.value !== '')} emptyOption={empty?.label} onValueChange={onValueChange} />
+    </div>
+  );
+}
+
+// Filtro da barra com busca: a opção de valor vazio vira o texto de exemplo e o botão de limpar volta a ela.
+export function InlineSearchSelect({ label, value, options, onValueChange }: { label: string; value: string; options: Option[]; onValueChange: (v: string) => void }) {
+  const empty = options.find((o) => o.value === '');
+  return (
+    <div className="select-inline">
+      <ComboBox label={label} value={value} options={options.filter((o) => o.value !== '')} placeholder={empty?.label} clearable onValueChange={onValueChange} />
     </div>
   );
 }

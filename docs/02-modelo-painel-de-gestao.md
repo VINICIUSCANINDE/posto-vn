@@ -36,7 +36,7 @@ Receber automaticamente os lançamentos da área do colaborador em até 5 segund
 - Filtrar por mês e instituição; buscar por placa, veículo, instituição ou motorista.
 - Mostrar data, placa, veículo, instituição, motorista, combustível, litros, preço utilizado, valor total e odômetro.
 - Permitir lançamento administrativo quando necessário, seguindo as mesmas validações.
-- Preservar o registro original. Eventuais funções futuras de correção ou cancelamento devem manter histórico e identificação do responsável; não apagar silenciosamente os dados.
+- Preservar o registro original. O cancelamento (ver `docs/decisoes.md`) mantém o registro no histórico com motivo, responsável e horário; não apagar silenciosamente os dados.
 
 ### Módulo 3 — Instituições e clientes
 Cadastrar nome/razão social, documento e contato. Cada instituição concentra os veículos vinculados e os valores do fechamento mensal. Exemplos de clientes possíveis: empresas, órgãos públicos e demais instituições atendidas pelo posto.
