@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench, Ban, X } from 'lucide-react';
+import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench, Ban, X, Cylinder } from 'lucide-react';
 import { request, RequestError, type Row, money, num, today, dateBR, timeBR, collectErrors, focusField } from '../request';
 import { Card, Counter, Reveal } from '../../components/brand';
 import { Dialog } from '../../components/dialog';
@@ -11,12 +11,13 @@ import { authClient } from '../../lib/auth-client';
 import { ConsumptionPreview, OdometerBadge } from '../../components/consumption';
 import Workshop from '../workshop';
 import { cancelNote, isValidFill } from '../../lib/fills';
+import Tank from '../tank';
 
 const DRAFT_KEY = 'controle-transporte:rascunho';
 const PAGE_SIZE = 20;
 const fresh = () => ({ vehicleId: '', fuelId: '', date: today(), liters: '', km: '', driver: '', note: '' });
 type Draft = ReturnType<typeof fresh>;
-type View = 'home' | 'history' | 'workshop';
+type View = 'home' | 'history' | 'workshop' | 'tank';
 
 async function signOut() {
   await authClient.signOut();
@@ -272,6 +273,7 @@ export default function Attendant() {
             <li><button className="nav-item" aria-current={view === 'home' ? 'page' : undefined} onClick={() => go('home')}><Home size={18} aria-hidden="true" />Início</button></li>
             <li><button className="nav-item" aria-current={view === 'history' ? 'page' : undefined} onClick={() => go('history')}><ClipboardList size={18} aria-hidden="true" />Meus lançamentos<span className="nav-count">{recent.length}</span></button></li>
             <li><button className="nav-item" aria-current={view === 'workshop' ? 'page' : undefined} onClick={() => go('workshop')}><Wrench size={18} aria-hidden="true" />Oficina</button></li>
+            <li><button className="nav-item" aria-current={view === 'tank' ? 'page' : undefined} onClick={() => go('tank')}><Cylinder size={18} aria-hidden="true" />Tanque</button></li>
           </ul>
         </nav>
         <div className="sidebar-foot">
@@ -323,6 +325,25 @@ export default function Attendant() {
                 <div className="empty empty-sm"><p>Você ainda não lançou nenhum abastecimento.</p></div>
               )}
             </Card>
+            {fuels.length > 0 && (
+              <Card className="panel">
+                <div className="panel-head">
+                  <div><h2>Tanque da garagem</h2><p>Saldo por combustível e registro das chegadas</p></div>
+                  <button className="link-btn" onClick={() => go('tank')}>Abrir tanque</button>
+                </div>
+                <ul className="records">
+                  {fuels.map((x) => (
+                    <li key={x.id}>
+                      <div>
+                        <p className="record-main">{x.name}</p>
+                        {x.tankLiters < 0 && <p><span className="tag tag-danger">Abastecido acima do registrado</span></p>}
+                      </div>
+                      <strong>{num(x.tankLiters || 0)} L</strong>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
           </>
         )}
 
@@ -351,6 +372,15 @@ export default function Attendant() {
                 </div>
               )}
             </Card>
+          </>
+        )}
+
+        {view === 'tank' && (
+          <>
+            <header className="page-header">
+              <div><h1>Tanque</h1><p>Saldo do tanque da garagem por combustível e chegadas registradas</p></div>
+            </header>
+            <Tank data={data} onRefresh={() => load(true)} />
           </>
         )}
 
@@ -405,6 +435,11 @@ export default function Attendant() {
                 <div><dt>Odômetro</dt><dd>{num(receipt.km, 0)} km</dd></div>
                 <div className="receipt-total"><dt>Valor</dt><dd>{money(receipt.totalCents)}</dd></div>
               </dl>
+              {receipt.tankLiters < 0 && (
+                <p className="notice notice-error" role="alert">
+                  O tanque de {receipt.fuel} ficou negativo ({num(receipt.tankLiters)} L). Há abastecimentos acima do que foi registrado como chegada. Avise a gestão para conferir.
+                </p>
+              )}
               <div className="receipt-actions">
                 <button className="btn btn-primary btn-lg" onClick={() => setReceipt(null)}><Plus size={18} aria-hidden="true" /> Novo abastecimento</button>
                 <button className="btn btn-lg" onClick={(e) => e.currentTarget.closest('dialog')?.close()}>Fechar</button>
