@@ -5,7 +5,7 @@ import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Ho
 import { request, RequestError, type Row, money, num, today, dateBR, timeBR, collectErrors, focusField } from '../request';
 import { Card, Counter, Reveal } from '../../components/brand';
 import { Dialog } from '../../components/dialog';
-import { Input, OptionCards, SearchInput, Select } from '../../components/form';
+import { Input, OptionCards, SearchInput, SearchSelect } from '../../components/form';
 import { Toolbar } from '../../components/toolbar';
 import { authClient } from '../../lib/auth-client';
 import { ConsumptionPreview, OdometerBadge } from '../../components/consumption';
@@ -345,7 +345,7 @@ export default function Attendant() {
             <form className="colab-form" onSubmit={save} noValidate>
               <fieldset className="form-stack" disabled={saving}>
                 {(!vehicles.length || !fuels.length) && <p className="notice notice-warn">A administração precisa cadastrar veículos e combustíveis antes do primeiro lançamento.</p>}
-                <Select {...bind('vehicleId')} label="Veículo" placeholder="Selecione a placa"
+                <SearchSelect {...bind('vehicleId')} label="Veículo" placeholder="Digite a placa ou o modelo"
                   options={vehicles.map((x) => ({ value: x.id, label: `${x.plate} · ${x.name}` }))}
                   hint={vehicle ? institution?.name ?? 'Sem instituição vinculada' : undefined} />
                 <OptionCards name="fuelId" label="Combustível" value={form.fuelId} error={fieldErrors.fuelId} onValueChange={(v) => field('fuelId', v)}

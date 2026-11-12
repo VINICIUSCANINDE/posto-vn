@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Car, CheckCircle2, ClipboardList, Download, Package, Plus, RefreshCw, Trash2, Undo2, X } from 'lucide-react';
 import { Card, Counter } from '../components/brand';
 import { Dialog } from '../components/dialog';
-import { InlineSelect, Input, Select, SearchInput } from '../components/form';
+import { InlineSearchSelect, Input, SearchInput, SearchSelect, Select } from '../components/form';
 import { Toolbar } from '../components/toolbar';
 import { collectErrors, dateBR, request, today, type Row, focusField } from './request';
 
@@ -158,7 +158,7 @@ export default function Workshop({ data, onRefresh, canDelete = false }: { data:
         <button className="btn btn-primary" onClick={() => open('out')}><ArrowUpRight size={16} aria-hidden="true" /> Registrar saída</button>
       </>}>
         <SearchInput label="Buscar na oficina" placeholder="Peça, código, placa ou recebedor" value={query} onValueChange={setQuery} />
-        {tab !== 'stock' && <InlineSelect label="Filtrar por veículo" value={vehicleFilter} onValueChange={setVehicleFilter} options={[{ value: '', label: 'Todos os veículos' }, ...vehicleOptions]} />}
+        {tab !== 'stock' && <InlineSearchSelect label="Filtrar por veículo" value={vehicleFilter} onValueChange={setVehicleFilter} options={[{ value: '', label: 'Todos os veículos' }, ...vehicleOptions]} />}
       </Toolbar>
 
       {notice && (
@@ -302,7 +302,7 @@ export default function Workshop({ data, onRefresh, canDelete = false }: { data:
               {action === 'return' ? (
                 <>
                   {form.fromToolbar ? (
-                    <Select {...field('outId')} label="Saída que teve sobra" placeholder="Selecione a saída" full
+                    <SearchSelect {...field('outId')} label="Saída que teve sobra" placeholder="Digite a placa ou a peça" full
                       options={openOuts.map((o) => ({ value: o.id, label: `${dateBR(o.date)} · ${o.plate} · ${o.part} · pode devolver ${qty(returnable(o))} ${o.unit}` }))} />
                   ) : null}
                   {returningOut && (
@@ -329,12 +329,12 @@ export default function Workshop({ data, onRefresh, canDelete = false }: { data:
                 </>
               ) : (
                 <>
-                  <Select {...field('partId')} label="Peça" options={partOptions} placeholder="Selecione a peça" full
+                  <SearchSelect {...field('partId')} label="Peça" options={partOptions} placeholder="Digite o nome ou o código" full
                     hint={part ? `Estoque disponível: ${qty(part.balanceUnits)} ${part.unit}` : undefined} />
                   <Input {...field('quantity')} label={`Quantidade${part ? ` (${part.unit})` : ''}`} type="number" min={0.001} max={1000000} step={0.001} inputMode="decimal" />
                   <Input {...field('date')} label={action === 'plan' ? 'Data prevista de uso' : 'Data da movimentação'} type="date" {...(action !== 'plan' ? { max: today() } : {})} />
                   {action !== 'in' && (
-                    <Select {...field('vehicleId')} label="Placa do veículo de destino" options={vehicleOptions} placeholder="Selecione a placa" full />
+                    <SearchSelect {...field('vehicleId')} label="Placa do veículo de destino" options={vehicleOptions} placeholder="Digite a placa ou o modelo" full />
                   )}
                   {action !== 'in' && destination && (
                     <div className="form-summary field-full">

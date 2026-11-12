@@ -429,7 +429,7 @@ export default function Dashboard() {
       {modal.kind === 'contract' && <>
         <Select {...bind('institutionId')} label="Instituição" options={toOptions(inst)} full />
         <Select {...bind('personId')} label="Pessoa responsável" options={toOptions(rows('person'))} optional />
-        <Select {...bind('vehicleId')} label="Veículo" optional placeholder={form.institutionId ? 'Todos os veículos' : 'Escolha a instituição antes'}
+        <SearchSelect {...bind('vehicleId')} label="Veículo" optional placeholder={form.institutionId ? 'Todos os veículos' : 'Escolha a instituição antes'}
           options={toOptions(vehicles.filter((x) => x.institutionId === form.institutionId), (x) => `${x.plate} · ${x.name}`)} />
         <Input {...bind('start')} label="Início da vigência" type="date" />
         <Input {...bind('end')} label="Fim da vigência" type="date" />

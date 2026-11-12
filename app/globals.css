@@ -91,9 +91,9 @@ a { color: var(--brand); text-underline-offset: 3px; }
 .search:focus-within { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 8px 0; color: var(--ink); }
 input::placeholder { color: var(--ink-3); opacity: 1; }
-.field input, .select-trigger { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius); background-color: var(--surface); color: var(--ink); font-size: var(--t-14); }
-.select-inline .select-trigger { min-width: 180px; max-width: 280px; }
-.field input:focus, .select-trigger:focus-visible, .select-trigger[data-state='open'] { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+.field input, .select-trigger, .select-inline .combo input { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius); background-color: var(--surface); color: var(--ink); font-size: var(--t-14); }
+.select-inline .select-trigger, .select-inline .combo input { min-width: 180px; max-width: 280px; }
+.field input:focus, .select-inline .combo input:focus, .select-trigger:focus-visible, .select-trigger[data-state='open'] { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
 .empty { display: grid; justify-items: center; gap: 8px; padding: 48px 24px; text-align: center; color: var(--ink-3); }
 .empty h2, .empty h3 { font-size: var(--t-16); color: var(--ink); }
 .empty p { max-width: 42ch; color: var(--ink-2); }
@@ -376,7 +376,10 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
 .select-item[data-disabled] { opacity: 0.45; cursor: not-allowed; }
 .select-check { position: absolute; right: 10px; display: inline-flex; color: var(--brand); }
 .combo { position: relative; }
-.field .combo input { padding-right: 40px; text-overflow: ellipsis; }
+.field .combo input, .select-inline .combo input { padding-right: 40px; text-overflow: ellipsis; }
+.combo.combo-clearable input { padding-right: 72px; }
+.combo-clear { position: absolute; top: 0; right: 36px; bottom: 0; width: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); background: none; border: 0; cursor: pointer; }
+.combo-clear:hover { color: var(--ink); }
 .combo-trigger { position: absolute; top: 0; right: 0; bottom: 0; width: 40px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); background: none; border: 0; cursor: pointer; }
 .combo-trigger svg { transition: transform 0.15s; }
 .combo-trigger[data-popup-open] svg { transform: rotate(180deg); }
@@ -416,7 +419,7 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
   .fill-modal { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; }
   .invite-url { flex-direction: column; }
   .page-header { align-items: stretch; }
-  .select-inline .select-trigger { width: 100%; max-width: none; min-height: 44px; }
+  .select-inline .select-trigger, .select-inline .combo input { width: 100%; max-width: none; min-height: 44px; }
   .kpis > :first-child, .kpis > :last-child:nth-child(even) { grid-column: 1 / -1; }
   .kpi strong { font-size: clamp(1.25rem, 6vw, 1.5rem); white-space: normal; overflow: visible; }
   .chart { height: 200px; padding-right: 12px; }
