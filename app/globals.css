@@ -135,6 +135,15 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
 .data-table tfoot td.num { text-align: right; }
 .data-table tfoot .total-cell { background: var(--brand-soft); }
 .row-action { text-align: right; width: 1%; white-space: nowrap; }
+/* Abastecimentos: a ação de cancelar fica fixa à direita, depois do Total, e vira só ícone no computador. */
+@media (min-width: 761px) {
+  .data-table.has-actions .row-action { position: sticky; right: 0; width: 56px; padding-left: 4px; background: var(--surface); }
+  .data-table.has-actions th.row-action { background: var(--surface-2); }
+  .data-table.has-actions tbody tr:hover .row-action { background: #fbfcfb; }
+  .data-table.has-actions .total-cell { right: 56px; }
+  .btn-cancel-fill { width: 32px; padding: 0; justify-content: center; }
+  .btn-cancel-fill .cancel-label { display: none; }
+}
 
 /* Cards */
 .card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }

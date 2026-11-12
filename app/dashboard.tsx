@@ -314,7 +314,7 @@ export default function Dashboard() {
 
   const fillsTable = (list: Row[], compact = false) => list.length ? (
     <div className="table-wrap">
-      <table className="data-table">
+      <table className={compact ? 'data-table' : 'data-table has-actions'}>
         <thead>
           <tr>
             <th scope="col">Data</th>
@@ -328,7 +328,7 @@ export default function Dashboard() {
             {!compact && <th scope="col" className="num">Média</th>}
             {!compact && <th scope="col">Lançado por</th>}
             <th scope="col" className="num total-cell">Total</th>
-            {!compact && <th scope="col"><span className="sr-only">Ações</span></th>}
+            {!compact && <th scope="col" className="row-action"><span className="sr-only">Ações</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -347,8 +347,8 @@ export default function Dashboard() {
               <td data-label="Total" className="num strong total-cell">{money(x.totalCents)}</td>
               {!compact && (
                 <td className="row-action">
-                  {x.canceled ? <span className="tag tag-danger">Cancelado</span> : (
-                    <button className="btn btn-sm btn-danger-ghost" onClick={() => openCancel(x)} aria-label={`Cancelar abastecimento de ${x.plate} em ${dateBR(x.date)}`}><Ban size={14} aria-hidden="true" /> Cancelar</button>
+                  {!x.canceled && (
+                    <button className="btn btn-sm btn-danger-ghost btn-cancel-fill" onClick={() => openCancel(x)} title="Cancelar abastecimento" aria-label={`Cancelar abastecimento de ${x.plate} em ${dateBR(x.date)}`}><Ban size={16} aria-hidden="true" /><span className="cancel-label"> Cancelar</span></button>
                   )}
                 </td>
               )}
