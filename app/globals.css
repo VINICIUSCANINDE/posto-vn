@@ -337,6 +337,10 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
 .notice-success > svg { flex: none; color: var(--brand); }
 .notice-success .icon-btn { margin-left: auto; width: 32px; height: 32px; color: inherit; }
 .workshop { display: grid; gap: 20px; }
+/* Tanque da garagem: saldo negativo em destaque com as cores de erro */
+.kpi.tank-negative { background: var(--danger-soft); border-color: #f5cdc7; }
+.kpi.tank-negative strong, .kpi.tank-negative .unit, .kpi.tank-negative p { color: var(--danger); }
+.kpi.tank-negative p { display: flex; align-items: center; gap: 6px; }
 .row-action .btn + .btn { margin-left: 6px; }
 
 /* Modal de novo abastecimento */

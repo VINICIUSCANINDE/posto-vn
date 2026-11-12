@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   Fuel, LayoutDashboard, Building2, Car, Users, FileText, Settings, Plus, ArrowUpRight, Download, X,
-  LogOut, ShieldCheck, CheckCircle2, Menu, ClipboardList, RefreshCw, Printer, Pencil, ChevronLeft, Wrench, Link2,
+  LogOut, ShieldCheck, CheckCircle2, Menu, ClipboardList, RefreshCw, Printer, Pencil, ChevronLeft, Wrench, Link2, Cylinder,
 } from 'lucide-react';
 import { request, RequestError, type Row, money, num, today, dateBR, monthLabel, recentMonths, collectErrors, focusField } from './request';
 import { Card, Counter, Reveal } from '../components/brand';
@@ -12,6 +12,7 @@ import { Toolbar } from '../components/toolbar';
 import { InviteLink } from '../components/invite-link';
 import { authClient } from '../lib/auth-client';
 import Workshop from './workshop';
+import Tank from './tank';
 import { ConsumptionPreview, ConsumptionTag, OdometerBadge } from '../components/consumption';
 
 async function signOut() {
@@ -19,12 +20,12 @@ async function signOut() {
   window.location.assign('/entrar');
 }
 
-type Page = 'overview' | 'fill' | 'institution' | 'vehicle' | 'person' | 'contract' | 'report' | 'fuel' | 'member' | 'workshop';
-type Kind = Exclude<Page, 'overview' | 'report' | 'workshop'>;
+type Page = 'overview' | 'fill' | 'institution' | 'vehicle' | 'person' | 'contract' | 'report' | 'fuel' | 'member' | 'workshop' | 'tank';
+type Kind = Exclude<Page, 'overview' | 'report' | 'workshop' | 'tank'>;
 
 const TITLES: Record<Page, string> = {
   overview: 'Visão geral', fill: 'Abastecimentos', institution: 'Instituições', vehicle: 'Veículos', person: 'Pessoas',
-  contract: 'Contratos', report: 'Fechamento mensal', fuel: 'Combustíveis e preços', member: 'Equipe e acessos', workshop: 'Oficina',
+  contract: 'Contratos', report: 'Fechamento mensal', fuel: 'Combustíveis e preços', member: 'Equipe e acessos', workshop: 'Oficina', tank: 'Tanque',
 };
 const SINGULAR: Record<Kind, string> = {
   fill: 'abastecimento', institution: 'instituição', vehicle: 'veículo', person: 'pessoa', contract: 'contrato',
@@ -32,10 +33,10 @@ const SINGULAR: Record<Kind, string> = {
 };
 const ICONS = {
   overview: LayoutDashboard, fill: Fuel, institution: Building2, vehicle: Car, person: Users, contract: FileText,
-  report: ClipboardList, fuel: Settings, member: ShieldCheck, workshop: Wrench,
+  report: ClipboardList, fuel: Settings, member: ShieldCheck, workshop: Wrench, tank: Cylinder,
 };
 const NAV: { label?: string; items: Page[] }[] = [
-  { items: ['overview', 'fill', 'workshop'] },
+  { items: ['overview', 'fill', 'tank', 'workshop'] },
   { label: 'Cadastros', items: ['institution', 'vehicle', 'person', 'contract'] },
   { label: 'Gestão', items: ['report', 'fuel', 'member'] },
 ];
@@ -265,7 +266,7 @@ export default function Dashboard() {
   }
 
   const initials = String(user.name || 'AD').split(/\s+/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  const pageIsKind = !['overview', 'report', 'workshop'].includes(page);
+  const pageIsKind = !['overview', 'report', 'workshop', 'tank'].includes(page);
   const listKind = page as Kind;
 
   const monthSelect = <InlineSelect label="Mês" value={month} onValueChange={setMonth} options={MONTHS.map((m) => ({ value: m, label: monthLabel(m) }))} />;
@@ -457,12 +458,13 @@ export default function Dashboard() {
           {page === 'report' && (statementInst ? `Extrato de ${monthLabel(month)}${statementInst.document ? ` · ${statementInst.document}` : ''}` : `Totais a faturar por instituição em ${monthLabel(month)}`)}
           {pageIsKind && page !== 'fill' && `${rows(page).length} ${rows(page).length === 1 ? 'cadastro' : 'cadastros'}`}
           {page === 'workshop' && 'Estoque de peças, entradas, uso previsto e entregas por veículo'}
+          {page === 'tank' && 'Saldo do tanque da garagem por combustível e chegadas registradas'}
         </p>
       </div>
     </header>
   );
 
-  const toolbar = page === 'workshop' ? null : (
+  const toolbar = page === 'workshop' || page === 'tank' ? null : (
     <Toolbar
       actions={page === 'report' ? <>
         <button className="btn" onClick={() => window.print()} disabled={!fills.length}><Printer size={16} aria-hidden="true" /> Imprimir / PDF</button>
@@ -545,6 +547,7 @@ export default function Dashboard() {
         {toolbar}
 
         {page === 'workshop' && <Workshop data={data} onRefresh={() => load(true, true)} canDelete />}
+        {page === 'tank' && <Tank data={data} onRefresh={() => load(true, true)} />}
 
         {page === 'overview' && <>
           <Reveal>{kpis}</Reveal>

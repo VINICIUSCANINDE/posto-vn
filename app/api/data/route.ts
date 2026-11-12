@@ -4,6 +4,7 @@ import { entries, user as users, workshopCounters } from '../../../db/schema';
 import { appOrigin, createInvite } from '../../../lib/invites';
 import { createMember, listMembers, setMember } from '../../../lib/members';
 import { consumption } from '../../../lib/consumption';
+import { tankBalance, tankBalances } from '../../../lib/tank';
 import { getCurrentUser, json, sameOrigin, type TenantUser } from '../../../lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -39,12 +40,15 @@ export async function GET(req: Request) {
     const admin = current.role === 'admin' && new URL(req.url).searchParams.get('view') !== 'attendant';
     const lastKm: Record<string, number> = {};
     for (const r of all) if (r.kind === 'fill' && (lastKm[r.vehicleId] ?? -1) < r.km) lastKm[r.vehicleId] = r.km;
-    const shared = ['institution', 'vehicle', 'fuel', 'workshop_part', 'workshop_in', 'workshop_plan', 'workshop_out', 'workshop_return'];
+    // O saldo do tanque usa todos os abastecimentos da empresa, inclusive os que o colaborador não vê.
+    const tank = tankBalances(all);
+    const shared = ['institution', 'vehicle', 'fuel', 'fuel_in', 'workshop_part', 'workshop_in', 'workshop_plan', 'workshop_out', 'workshop_return'];
     const data = all
       .filter((r) => r.kind !== 'audit' && r.kind !== 'member' && (admin || shared.includes(r.kind) || (r.kind === 'fill' && r.actorId === current.id)))
       .map((r) => r.kind === 'institution' && !admin ? { id: r.id, kind: r.kind, name: r.name }
         : r.kind === 'vehicle' && !admin ? { id: r.id, kind: r.kind, name: r.name, plate: r.plate, institutionId: r.institutionId, kmPerLiter: r.kmPerLiter, lastKm: lastKm[r.id] }
         : r.kind === 'vehicle' ? { ...r, lastKm: lastKm[r.id] }
+        : r.kind === 'fuel' ? { ...r, tankLiters: tank[r.id] ?? 0 }
         : r);
     if (admin) data.push(...(await listMembers([current.organizationId])));
     return json({ data, user: { id: current.id, name: current.name, role: current.role, email: current.email, organization: current.organizationName } });
@@ -108,7 +112,7 @@ export async function POST(req: Request) {
       if (after && km > after.km) return fail('O odômetro não pode ser maior que um abastecimento já registrado em data posterior.');
       v = {
         vehicleId: vehicle.id, institutionId: institution.id, plate: vehicle.plate, vehicle: vehicle.name, institution: institution.name,
-        fuel: fuel.name, priceCents: fuel.priceCents, liters, km, date, driver: str('driver'), note: str('note'),
+        fuelId: fuel.id, tank: true, fuel: fuel.name, priceCents: fuel.priceCents, liters, km, date, driver: str('driver'), note: str('note'),
         totalCents: Math.round(liters * fuel.priceCents), actorId: current.id, attendant: current.name,
       };
       // Registra a média do trecho para o controle de consumo; o primeiro abastecimento do veículo não tem trecho.
@@ -151,6 +155,8 @@ export async function POST(req: Request) {
     } else {
       await db.insert(entries).values(record);
     }
+    // Abastecimento novo desconta do tanque; o saldo resultante permite avisar quando fica negativo.
+    if (kind === 'fill') return json({ ok: true, record: { ...read(record), tankLiters: tankBalance([...all, { ...v, kind }], v.fuelId) } });
     return json({ ok: true, record: read(record) });
   } catch {
     return fail('Não foi possível salvar. Confira os dados e tente novamente.', 500);
