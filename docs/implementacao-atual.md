@@ -14,6 +14,9 @@ Sistema em Next.js 16 na Vercel, com banco Neon Postgres e login próprio (Bette
 - Preços e nomes preservados no histórico de abastecimentos.
 - Fechamento mensal por instituição, com exportação CSV e impressão em PDF pelo navegador.
 - Oficina: estoque de peças, entradas, uso previsto por veículo e entregas (`docs/03-modulo-oficina.md`).
+- Tanque da garagem: chegada de combustível e saldo por combustível, descontado a cada abastecimento.
+- Cancelamento de abastecimento com motivo, mantendo o registro no histórico.
+- Seletores de veículo, placa, peça e saída aceitam busca digitando.
 - Alterações de cadastros registradas em auditoria; lançamentos não são sobrescritos.
 
 ## Contas e acesso
@@ -26,6 +29,20 @@ Sistema em Next.js 16 na Vercel, com banco Neon Postgres e login próprio (Bette
 6. **Desativar.** Editar o membro e mudar Acesso para Desativado bloqueia o login e as chamadas à API.
 
 A situação de cada membro aparece na lista: Ativo, Convite pendente (com horário de validade), Convite expirado ou Desativado. Um administrador não consegue remover o próprio perfil de administrador.
+
+## Tanque da garagem
+
+Tela "Tanque" no menu do administrador e da área do colaborador (no celular, o saldo aparece também no Início). Cada combustível cadastrado tem um tanque. "Registrar chegada" grava um lançamento `fuel_in` (`POST /api/tank`) com litros, data e, se quiser, fornecedor, nota e observação. Administrador e colaborador registram chegadas; chegada não é editada nem cancelada nesta versão.
+
+O saldo não fica guardado no banco: o servidor soma as chegadas e desconta os abastecimentos com `tank: true` que não foram cancelados (`lib/tank.ts`). Abastecimentos lançados antes desta função não têm `fuelId` nem `tank` e ficam fora da conta. Como o colaborador só recebe os próprios abastecimentos, o saldo vem calculado pelo servidor em cada combustível (`tankLiters`). Se um abastecimento deixar o tanque negativo, ele é gravado mesmo assim, o comprovante avisa e o cartão do combustível fica em destaque.
+
+Para começar a usar, registre como primeira chegada o volume medido hoje em cada tanque.
+
+## Cancelamento de abastecimento
+
+Botão "Cancelar" na lista de abastecimentos do administrador e em Meus lançamentos do colaborador (`POST /api/fill-cancel`). O motivo é obrigatório. O administrador cancela qualquer abastecimento da empresa; o colaborador, só os que ele lançou.
+
+O registro não é apagado: ganha `canceled`, `canceledAt`, `canceledBy`, `canceledById` e `cancelReason`, e a alteração vai para a auditoria. O cancelado continua na lista, com a nota de quem cancelou, quando e por quê, mas sai dos indicadores, do gráfico, do fechamento, da planilha, do controle de consumo, do último odômetro do veículo e do saldo do tanque (os litros voltam). O abastecimento seguinte do mesmo veículo tem a média refeita a partir do anterior válido, também com registro na auditoria (`lib/fills.ts`).
 
 ## Banco de dados
 

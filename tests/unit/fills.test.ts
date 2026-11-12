@@ -91,3 +91,16 @@ test('descreve quem cancelou, quando (horário de Brasília) e o motivo', () => 
   const text = cancelNote({ canceledBy: 'Ana Souza', canceledAt: '2026-11-12T17:30:00.000Z', cancelReason: 'Litros digitados errado' });
   assert.equal(text, 'Cancelado por Ana Souza em 12/11/2026 às 14:30. Motivo: Litros digitados errado');
 });
+
+test('pula o seguinte que já estava cancelado e recalcula o próximo válido', () => {
+  const fills = [
+    fill('a', '2026-01-01', 1000),
+    fill('b', '2026-01-05', 1500, { previousKm: 1000, distanceKm: 500, kmPerLiter: 10, consumption: 'ok' }),
+    fill('c', '2026-01-08', 1800, { canceled: true }),
+    fill('d', '2026-01-10', 2000, { previousKm: 1500, distanceKm: 500, kmPerLiter: 10, expectedKmPerLiter: 10, divergencePct: 0, consumption: 'ok' }),
+  ];
+  const result = recalcAfterCancel(fills, 'b', 10);
+  assert.equal(result?.id, 'd');
+  assert.equal(result?.after.previousKm, 1000);
+  assert.equal(result?.after.distanceKm, 1000);
+});
