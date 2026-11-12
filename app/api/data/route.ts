@@ -4,6 +4,7 @@ import { entries, user as users, workshopCounters } from '../../../db/schema';
 import { appOrigin, createInvite } from '../../../lib/invites';
 import { createMember, listMembers, setMember } from '../../../lib/members';
 import { consumption } from '../../../lib/consumption';
+import { isValidFill } from '../../../lib/fills';
 import { getCurrentUser, json, sameOrigin, type TenantUser } from '../../../lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
       : r);
     const admin = current.role === 'admin' && new URL(req.url).searchParams.get('view') !== 'attendant';
     const lastKm: Record<string, number> = {};
-    for (const r of all) if (r.kind === 'fill' && (lastKm[r.vehicleId] ?? -1) < r.km) lastKm[r.vehicleId] = r.km;
+    for (const r of all) if (isValidFill(r) && (lastKm[r.vehicleId] ?? -1) < r.km) lastKm[r.vehicleId] = r.km;
     const shared = ['institution', 'vehicle', 'fuel', 'workshop_part', 'workshop_in', 'workshop_plan', 'workshop_out', 'workshop_return'];
     const data = all
       .filter((r) => r.kind !== 'audit' && r.kind !== 'member' && (admin || shared.includes(r.kind) || (r.kind === 'fill' && r.actorId === current.id)))
@@ -101,7 +102,7 @@ export async function POST(req: Request) {
       if (!Number.isFinite(liters) || liters <= 0 || liters > 10000 || !Number.isInteger(km) || km < 0 || km > 9999999) return fail('Confira a quantidade de litros e o odômetro.');
       const today = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T12:00:00Z')) || new Date(date + 'T12:00:00Z').toISOString().slice(0, 10) !== date || date > today) return fail('Informe uma data válida, até hoje.');
-      const vehicleFills = all.filter((r) => r.kind === 'fill' && r.vehicleId === vehicle.id).sort((a, b) => a.date.localeCompare(b.date) || a.created.localeCompare(b.created));
+      const vehicleFills = all.filter((r) => isValidFill(r) && r.vehicleId === vehicle.id).sort((a, b) => a.date.localeCompare(b.date) || a.created.localeCompare(b.created));
       const before = [...vehicleFills].reverse().find((r) => r.date <= date);
       const after = vehicleFills.find((r) => r.date > date);
       if (before && km < before.km) return fail(`O odômetro não pode ser menor que o último registro (${before.km.toLocaleString('pt-BR')} km).`);

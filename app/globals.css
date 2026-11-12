@@ -304,6 +304,11 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
 .row-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .org-inactive { opacity: 0.72; }
 .org-inactive .panel-head h2 { color: var(--ink-2); }
+/* Lançamento cancelado: continua visível no histórico, atenuado e com o valor riscado. */
+.is-canceled > :not(.row-action) { opacity: 0.72; }
+.is-canceled .total-cell, .records .is-canceled strong { text-decoration: line-through; }
+.records .cancel-note { margin-top: 2px; color: var(--danger); font-size: var(--t-13); }
+.records .record-actions { margin-top: 8px; }
 .panel-head h2 .tag { margin-left: 6px; vertical-align: middle; }
 
 /* Odômetro e consumo */
