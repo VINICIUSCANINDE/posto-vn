@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench } from 'lucide-react';
+import { Fuel, LogOut, CheckCircle2, Plus, ClipboardList, RefreshCw, WifiOff, Home, ArrowUpRight, Wrench, Ban, X } from 'lucide-react';
 import { request, RequestError, type Row, money, num, today, dateBR, timeBR, collectErrors, focusField } from '../request';
 import { Card, Counter, Reveal } from '../../components/brand';
 import { Dialog } from '../../components/dialog';
@@ -10,6 +10,7 @@ import { Toolbar } from '../../components/toolbar';
 import { authClient } from '../../lib/auth-client';
 import { ConsumptionPreview, OdometerBadge } from '../../components/consumption';
 import Workshop from '../workshop';
+import { cancelNote, isValidFill } from '../../lib/fills';
 
 const DRAFT_KEY = 'controle-transporte:rascunho';
 const PAGE_SIZE = 20;
@@ -35,6 +36,12 @@ export default function Attendant() {
   const [view, setView] = useState<View>('home');
   const [query, setQuery] = useState('');
   const [shown, setShown] = useState(PAGE_SIZE);
+  const [canceling, setCanceling] = useState<Row | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [reasonError, setReasonError] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const locked = useRef(false);
   const inFlight = useRef(false);
   const latest = useRef(0);
@@ -117,8 +124,10 @@ export default function Attendant() {
   const recent = data.filter((x) => x.kind === 'fill').sort((a, b) => b.created.localeCompare(a.created));
   const q = query.trim().toLowerCase();
   const filtered = q ? recent.filter((x) => `${x.plate} ${x.vehicle} ${instName(x)}`.toLowerCase().includes(q)) : recent;
-  const day = recent.filter((x) => x.date === today());
-  const monthFills = recent.filter((x) => x.date.startsWith(today().slice(0, 7)));
+  // Cancelados continuam na lista, marcados, mas não entram nas contagens do dia e do mês.
+  const valid = recent.filter(isValidFill);
+  const day = valid.filter((x) => x.date === today());
+  const monthFills = valid.filter((x) => x.date.startsWith(today().slice(0, 7)));
   const sum = (list: Row[], key: string) => list.reduce((a, b) => a + (b[key] || 0), 0);
   const total = Math.round(Number(form.liters || 0) * (fuel?.priceCents || 0));
   const hasDraft = Boolean(form.vehicleId || form.liters || form.km);
@@ -175,12 +184,48 @@ export default function Attendant() {
     }
   }
 
+  function openCancel(fill: Row) {
+    setCancelReason('');
+    setCancelError('');
+    setReasonError('');
+    setNotice('');
+    setCanceling(fill);
+  }
+
+  async function cancelFill(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!canceling || cancelBusy) return;
+    const formEl = e.currentTarget;
+    const errors = collectErrors(formEl);
+    if (errors.reason) { setReasonError(errors.reason); focusField(formEl, 'reason'); return; }
+    setCancelBusy(true);
+    setCancelError('');
+    try {
+      await request('/api/fill-cancel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: canceling.id, reason: cancelReason }),
+      }, 15000);
+      formEl.closest('dialog')?.close();
+      await load(true);
+      setNotice(`Abastecimento de ${canceling.plate} cancelado.`);
+    } catch (err) {
+      setCancelError((err as RequestError).message);
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   const fillItem = (x: Row) => (
-    <li key={x.id}>
+    <li key={x.id} className={x.canceled ? 'is-canceled' : undefined}>
       <div>
-        <p className="record-main"><span className="plate">{x.plate}</span> {x.vehicle}</p>
+        <p className="record-main"><span className="plate">{x.plate}</span> {x.vehicle}{x.canceled && <> <span className="tag tag-danger">Cancelado</span></>}</p>
         <p>{instName(x)}</p>
         <p className="record-meta">{dateBR(x.date)} · {timeBR(x.created)} · {x.fuel} · {num(x.liters)} L · {num(x.km, 0)} km</p>
+        {x.canceled ? <p className="cancel-note">{cancelNote(x)}</p> : x.actorId === user?.id && (
+          <div className="row-actions record-actions">
+            <button className="btn btn-sm btn-danger-ghost" onClick={() => openCancel(x)} aria-label={`Cancelar abastecimento de ${x.plate} em ${dateBR(x.date)}`}><Ban size={14} aria-hidden="true" /> Cancelar</button>
+          </div>
+        )}
       </div>
       <strong>{money(x.totalCents)}</strong>
     </li>
@@ -244,6 +289,12 @@ export default function Attendant() {
       </aside>
 
       <main id="conteudo" className="content colab-content" tabIndex={-1}>
+        {notice && (
+          <p className="notice notice-success" role="status">
+            <CheckCircle2 size={18} aria-hidden="true" /> {notice}
+            <button className="icon-btn" aria-label="Fechar aviso" onClick={() => setNotice('')}><X size={16} aria-hidden="true" /></button>
+          </p>
+        )}
         {connection && <p className="notice notice-warn colab-offline" role="alert"><WifiOff size={16} aria-hidden="true" /> {connection} Os dados podem estar desatualizados.</p>}
 
         {view === 'home' && (
@@ -319,6 +370,24 @@ export default function Attendant() {
         <button aria-current={view === 'history' ? 'page' : undefined} onClick={() => go('history')}><ClipboardList size={22} aria-hidden="true" /><span>Lançamentos</span></button>
         <button aria-current={view === 'workshop' ? 'page' : undefined} onClick={() => go('workshop')}><Wrench size={22} aria-hidden="true" /><span>Oficina</span></button>
       </nav>
+
+      {canceling && (
+        <Dialog title="Cancelar abastecimento?" onClose={() => setCanceling(null)} busy={cancelBusy}>
+          <form onSubmit={cancelFill} noValidate>
+            <fieldset className="form-stack" disabled={cancelBusy}>
+              <p><span className="plate">{canceling.plate}</span> <strong>{canceling.vehicle}</strong> · {dateBR(canceling.date)} · {num(canceling.liters)} L · {money(canceling.totalCents)}</p>
+              <Input name="reason" label="Motivo do cancelamento" maxLength={200} autoComplete="off" value={cancelReason} error={reasonError}
+                onValueChange={(v) => { setCancelReason(v); setReasonError(''); }} />
+              <p className="hint">O lançamento continua em Meus lançamentos, marcado como cancelado, e a gestão vê o motivo.</p>
+            </fieldset>
+            {cancelError && <p role="alert" className="notice notice-error">{cancelError}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={cancelBusy}>Voltar</button>
+              <button className="btn btn-danger" disabled={cancelBusy}>{cancelBusy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Cancelando…</> : <><Ban size={16} aria-hidden="true" /> Cancelar abastecimento</>}</button>
+            </div>
+          </form>
+        </Dialog>
+      )}
 
       {fillOpen && (
         <Dialog title={receipt ? 'Comprovante' : 'Novo abastecimento'} onClose={() => setFillOpen(false)} busy={saving} className="fill-modal">

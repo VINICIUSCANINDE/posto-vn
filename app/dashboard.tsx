@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   Fuel, LayoutDashboard, Building2, Car, Users, FileText, Settings, Plus, ArrowUpRight, Download, X,
-  LogOut, ShieldCheck, CheckCircle2, Menu, ClipboardList, RefreshCw, Printer, Pencil, ChevronLeft, Wrench, Link2,
+  LogOut, ShieldCheck, CheckCircle2, Menu, ClipboardList, RefreshCw, Printer, Pencil, ChevronLeft, Wrench, Link2, Ban,
 } from 'lucide-react';
 import { request, RequestError, type Row, money, num, today, dateBR, monthLabel, recentMonths, collectErrors, focusField } from './request';
 import { Card, Counter, Reveal } from '../components/brand';
@@ -13,6 +13,7 @@ import { InviteLink } from '../components/invite-link';
 import { authClient } from '../lib/auth-client';
 import Workshop from './workshop';
 import { ConsumptionPreview, ConsumptionTag, OdometerBadge } from '../components/consumption';
+import { cancelNote, isValidFill } from '../lib/fills';
 
 async function signOut() {
   await authClient.signOut();
@@ -81,6 +82,9 @@ export default function Dashboard() {
   const [toast, setToast] = useState('');
   const [inviteResult, setInviteResult] = useState<{ name: string; url: string; expiresAt: string } | null>(null);
   const [linkBusy, setLinkBusy] = useState('');
+  const [canceling, setCanceling] = useState<Row | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
   const inFlight = useRef(false);
   const latest = useRef(0);
   const failures = useRef(0);
@@ -150,18 +154,22 @@ export default function Dashboard() {
   const instById = useMemo(() => new Map((byKind.institution ?? []).map((i) => [i.id, i])), [byKind]);
   const instName = (x: Row) => instById.get(x.institutionId)?.name || x.institution;
 
-  const monthFills = useMemo(
+  // A tabela de abastecimentos mostra os cancelados; totais, gráfico, fechamento e planilha usam só os válidos.
+  const monthAllFills = useMemo(
     () => (byKind.fill ?? []).filter((x) => x.date?.startsWith(month))
       .sort((a, b) => b.date.localeCompare(a.date) || b.created.localeCompare(a.created)),
     [byKind, month],
   );
-  const fills = institution ? monthFills.filter((x) => x.institutionId === institution) : monthFills;
+  const monthFills = useMemo(() => monthAllFills.filter(isValidFill), [monthAllFills]);
+  const listedFills = institution ? monthAllFills.filter((x) => x.institutionId === institution) : monthAllFills;
+  const fills = listedFills.filter(isValidFill);
+  const canceledCount = listedFills.length - fills.length;
   const total = fills.reduce((a, b) => a + b.totalCents, 0);
   const liters = fills.reduce((a, b) => a + b.liters, 0);
   const groups = groupByInstitution(fills, instName);
   const monthGroups = groupByInstitution(monthFills, instName);
   const q = query.trim().toLowerCase();
-  const searchedFills = q ? fills.filter((x) => `${x.plate} ${x.vehicle} ${instName(x)} ${x.driver ?? ''} ${x.attendant ?? ''}`.toLowerCase().includes(q)) : fills;
+  const searchedFills = q ? listedFills.filter((x) => `${x.plate} ${x.vehicle} ${instName(x)} ${x.driver ?? ''} ${x.attendant ?? ''}`.toLowerCase().includes(q)) : listedFills;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNavOpen(false); };
@@ -234,6 +242,36 @@ export default function Dashboard() {
     }
   }
 
+  function openCancel(fill: Row) {
+    setCancelReason('');
+    setCancelError('');
+    setFieldErrors({});
+    setCanceling(fill);
+  }
+
+  async function cancelFill(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!canceling || busy) return;
+    const formEl = e.currentTarget;
+    const errors = collectErrors(formEl);
+    if (errors.reason) { setCancelError(''); setFieldErrors(errors); focusField(formEl, 'reason'); return; }
+    setBusy(true);
+    setCancelError('');
+    try {
+      await request('/api/fill-cancel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: canceling.id, reason: cancelReason }),
+      }, 15000);
+      formEl.closest('dialog')?.close();
+      await load(false, true);
+      setToast('Abastecimento cancelado.');
+    } catch (err) {
+      setCancelError((err as RequestError).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function exportCsv() {
     const list = institution ? fills : monthFills;
     const esc = (x: unknown) => `"${String(x ?? '').replace(/"/g, '""')}"`;
@@ -289,14 +327,15 @@ export default function Dashboard() {
             {!compact && <th scope="col" className="num">Média</th>}
             {!compact && <th scope="col">Lançado por</th>}
             <th scope="col" className="num total-cell">Total</th>
+            {!compact && <th scope="col"><span className="sr-only">Ações</span></th>}
           </tr>
         </thead>
         <tbody>
           {list.map((x) => (
-            <tr key={x.id}>
+            <tr key={x.id} className={x.canceled ? 'is-canceled' : undefined}>
               <td data-label="Data">{dateBR(x.date).slice(0, 5)}</td>
               <td data-label="Placa"><span className="plate">{x.plate}</span></td>
-              <td data-label="Veículo" className="strong clip" title={x.vehicle}>{x.vehicle}{x.driver ? <small>{x.driver}</small> : null}</td>
+              <td data-label="Veículo" className="strong clip" title={x.vehicle}>{x.vehicle}{x.driver ? <small>{x.driver}</small> : null}{x.canceled ? <small title={cancelNote(x)}>{cancelNote(x)}</small> : null}</td>
               <td data-label="Instituição" className="clip" title={instName(x)}>{instName(x)}</td>
               <td data-label="Combustível">{fuelTag(x.fuel)}</td>
               {!compact && <td data-label="Preço/L" className="num">{money(x.priceCents)}</td>}
@@ -305,6 +344,13 @@ export default function Dashboard() {
               {!compact && <td data-label="Média" className="num"><ConsumptionTag fill={x} /></td>}
               {!compact && <td data-label="Lançado por" title={x.attendant}>{String(x.attendant || '').split(' ')[0]}</td>}
               <td data-label="Total" className="num strong total-cell">{money(x.totalCents)}</td>
+              {!compact && (
+                <td className="row-action">
+                  {x.canceled ? <span className="tag tag-danger">Cancelado</span> : (
+                    <button className="btn btn-sm btn-danger-ghost" onClick={() => openCancel(x)} aria-label={`Cancelar abastecimento de ${x.plate} em ${dateBR(x.date)}`}><Ban size={14} aria-hidden="true" /> Cancelar</button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -453,7 +499,7 @@ export default function Dashboard() {
         <h1>{page === 'report' && statementInst ? statementInst.name : TITLES[page]}</h1>
         <p>
           {page === 'overview' && `Abastecimentos de ${monthLabel(month)}${institution ? ` · ${instById.get(institution)?.name}` : ''}`}
-          {page === 'fill' && `${searchedFills.length} de ${fills.length} lançamentos em ${monthLabel(month)}`}
+          {page === 'fill' && `${searchedFills.length} de ${listedFills.length} lançamentos em ${monthLabel(month)}${canceledCount ? ` · ${canceledCount} ${canceledCount === 1 ? 'cancelado' : 'cancelados'}` : ''}`}
           {page === 'report' && (statementInst ? `Extrato de ${monthLabel(month)}${statementInst.document ? ` · ${statementInst.document}` : ''}` : `Totais a faturar por instituição em ${monthLabel(month)}`)}
           {pageIsKind && page !== 'fill' && `${rows(page).length} ${rows(page).length === 1 ? 'cadastro' : 'cadastros'}`}
           {page === 'workshop' && 'Estoque de peças, entradas, uso previsto e entregas por veículo'}
@@ -723,6 +769,24 @@ export default function Dashboard() {
       {inviteResult && (
         <Dialog title="Link de acesso gerado" onClose={() => setInviteResult(null)}>
           <InviteLink invite={inviteResult} />
+        </Dialog>
+      )}
+
+      {canceling && (
+        <Dialog title="Cancelar abastecimento?" onClose={() => { setCanceling(null); setFieldErrors({}); }} busy={busy}>
+          <form onSubmit={cancelFill} noValidate>
+            <fieldset className="form-grid" disabled={busy}>
+              <p className="field-full"><span className="plate">{canceling.plate}</span> <strong>{canceling.vehicle}</strong> · {dateBR(canceling.date)} · {num(canceling.liters)} L · {money(canceling.totalCents)}</p>
+              <Input name="reason" label="Motivo do cancelamento" full maxLength={200} autoComplete="off" value={cancelReason} error={fieldErrors.reason}
+                onValueChange={(v) => { setCancelReason(v); if (fieldErrors.reason) setFieldErrors({}); }} />
+              <p className="hint field-full">O lançamento continua no histórico, marcado como cancelado, e deixa de contar nos totais, no fechamento e na planilha. A média do abastecimento seguinte deste veículo é recalculada.</p>
+            </fieldset>
+            {cancelError && <p role="alert" className="notice notice-error">{cancelError}</p>}
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={(e) => e.currentTarget.closest('dialog')?.close()} disabled={busy}>Voltar</button>
+              <button className="btn btn-danger" disabled={busy}>{busy ? <><RefreshCw className="spin" size={16} aria-hidden="true" /> Cancelando…</> : <><Ban size={16} aria-hidden="true" /> Cancelar abastecimento</>}</button>
+            </div>
+          </form>
         </Dialog>
       )}
 
