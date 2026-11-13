@@ -317,6 +317,8 @@ input::placeholder { color: var(--ink-3); opacity: 1; }
 /* Atenua pela cor, não por opacidade, para o texto do cancelado manter contraste AA. */
 .data-table .is-canceled td, .data-table .is-canceled td.strong, .records .is-canceled, .records .is-canceled strong { color: var(--ink-3); }
 .is-canceled .total-cell, .records .is-canceled strong { text-decoration: line-through; }
+.data-table .struck { text-decoration: line-through; }
+.data-table td small.cancel-note { color: var(--danger); white-space: normal; }
 .records .cancel-note { margin-top: 2px; color: var(--danger); font-size: var(--t-13); }
 .records .record-actions { margin-top: 8px; }
 .panel-head h2 .tag { margin-left: 6px; vertical-align: middle; }

@@ -1,5 +1,5 @@
 // Tanque da garagem: um saldo por combustível, calculado na leitura a partir dos lançamentos.
-// Entra o que chegou ('fuel_in'); sai o que foi abastecido com tank: true e não foi cancelado.
+// Entra o que chegou ('fuel_in') e sai o que foi abastecido com tank: true; cancelados de qualquer tipo não contam.
 // Abastecimentos antigos (sem fuelId nem tank) ficam fora da conta.
 
 type TankRow = { kind?: string; fuelId?: string; liters?: unknown; tank?: boolean; canceled?: boolean };
@@ -13,9 +13,9 @@ const thousandths = (liters: unknown) => {
 };
 
 function movement(r: TankRow) {
-  if (!r.fuelId) return 0;
+  if (!r.fuelId || r.canceled) return 0;
   if (r.kind === 'fuel_in') return thousandths(r.liters);
-  if (r.kind === 'fill' && r.tank === true && !r.canceled) return -thousandths(r.liters);
+  if (r.kind === 'fill' && r.tank === true) return -thousandths(r.liters);
   return 0;
 }
 
@@ -30,10 +30,23 @@ export function tankBalances(rows: TankRow[]): Record<string, number> {
 
 export const tankBalance = (rows: TankRow[], fuelId: string) => tankBalances(rows)[fuelId] ?? 0;
 
+// Litros como o brasileiro digita: "5.000" é cinco mil e "12,5" é doze e meio.
+// O ponto só separa milhar quando vem em grupos de três depois de um número que não começa com zero;
+// fora disso ("12.5", "0.500") ele é a vírgula decimal digitada no teclado numérico.
+export function parseLiters(text: string): number | null {
+  const t = text.trim();
+  let normalized: string;
+  if (/^[1-9]\d{0,2}(\.\d{3})+(,\d{1,3})?$/.test(t)) normalized = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d+([.,]\d{1,3})?$/.test(t)) normalized = t.replace(',', '.');
+  else return null;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
 // Quantidade de uma chegada: acima de zero, até 100.000 L e no máximo três casas decimais.
 export function arrivalLiters(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
-  const n = Number(value);
+  const n = typeof value === 'string' ? parseLiters(value) ?? NaN : Number(value);
   if (!Number.isFinite(n) || n <= 0 || n > MAX_ARRIVAL_LITERS || Math.abs(n * 1000 - Math.round(n * 1000)) > 1e-6) return null;
   return Math.round(n * 1000) / 1000;
 }

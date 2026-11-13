@@ -12,7 +12,7 @@ type Rec = Record<string, any>;
 const fail = (error: string, status = 400) => json({ error }, status);
 const today = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
 
-// Chegada de combustível no tanque da garagem. Administrador e colaborador registram; não há edição nem cancelamento.
+// Chegada de combustível no tanque da garagem. Administrador e colaborador registram; a chegada não é editada, só cancelada.
 export async function POST(req: Request) {
   try {
     if (!sameOrigin(req)) return fail('Origem inválida.', 403);
@@ -21,7 +21,9 @@ export async function POST(req: Request) {
     const organizationId = current.organizationId;
     if (!organizationId) return fail('O acesso master usa o painel de empresas.', 403);
 
-    const { values } = (await req.json().catch(() => ({}))) as { values?: Rec };
+    const body = (await req.json().catch(() => ({}))) as { action?: string; id?: unknown; reason?: unknown; values?: Rec };
+    if (body.action === 'cancel') return await cancelArrival(current, organizationId, String(body.id ?? '').trim(), String(body.reason ?? '').trim().slice(0, 200));
+    const { values } = body;
     if (!values || typeof values !== 'object') return fail('Operação inválida.');
     const text = (key: string) => String(values[key] ?? '').trim().slice(0, 200);
 
@@ -46,4 +48,25 @@ export async function POST(req: Request) {
   } catch {
     return fail('Não foi possível registrar a chegada. Confira o histórico antes de tentar novamente.', 500);
   }
+}
+
+// Cancelamento lógico, como no abastecimento: a chegada fica no histórico e sai do saldo.
+// O administrador cancela qualquer chegada da empresa; o colaborador, só as que ele registrou.
+async function cancelArrival(current: { id: string; name: string; role?: string | null }, organizationId: string, id: string, reason: string) {
+  if (!id) return fail('Chegada inválida.');
+  const [row] = await db.select().from(entries).where(and(eq(entries.id, id), eq(entries.kind, 'fuel_in'), eq(entries.organizationId, organizationId)));
+  if (!row) return fail('Chegada não encontrada.', 404);
+  const before = JSON.parse(row.data) as Rec;
+  if (current.role !== 'admin' && before.actorId !== current.id) return fail('Você só pode cancelar as chegadas que registrou.', 403);
+  if (before.canceled) return fail('Esta chegada já foi cancelada.');
+  if (!reason) return fail('Informe o motivo do cancelamento.');
+  const now = new Date().toISOString();
+  const after = { ...before, canceled: true, canceledAt: now, canceledBy: current.name, canceledById: current.id, cancelReason: reason };
+  await db.transaction(async (tx) => {
+    await tx.update(entries).set({ data: JSON.stringify(after) })
+      .where(and(eq(entries.id, id), eq(entries.kind, 'fuel_in'), eq(entries.organizationId, organizationId)));
+    await tx.insert(entries).values({ id: crypto.randomUUID(), kind: 'audit', data: JSON.stringify({ recordId: id, before, after }), created: now, actor: current.id, organizationId });
+  });
+  const all = (await db.select().from(entries).where(eq(entries.organizationId, organizationId))).map((x) => ({ ...JSON.parse(x.data), kind: x.kind }) as Rec);
+  return json({ ok: true, id, tankLiters: tankBalance(all, before.fuelId) });
 }
