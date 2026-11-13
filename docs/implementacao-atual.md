@@ -32,7 +32,9 @@ A situação de cada membro aparece na lista: Ativo, Convite pendente (com horá
 
 ## Tanque da garagem
 
-Tela "Tanque" no menu do administrador e da área do colaborador (no celular, o saldo aparece também no Início). Cada combustível cadastrado tem um tanque. "Registrar chegada" grava um lançamento `fuel_in` (`POST /api/tank`) com litros, data e, se quiser, fornecedor, nota e observação. Administrador e colaborador registram chegadas; chegada não é editada nem cancelada nesta versão.
+Tela "Tanque" no menu do administrador e da área do colaborador (no celular, o saldo aparece também no Início). Cada combustível cadastrado tem um tanque. "Registrar chegada" grava um lançamento `fuel_in` (`POST /api/tank`) com litros, data e, se quiser, fornecedor, nota e observação. Administrador e colaborador registram chegadas. O campo de litros segue o costume brasileiro ("5.000" são cinco mil litros, "12,5" são doze e meio) e mostra o valor entendido antes de salvar.
+
+Chegada não é editada, mas pode ser cancelada no histórico (`POST /api/tank` com `action: 'cancel'`), com motivo obrigatório: o administrador cancela qualquer chegada e o colaborador só as que registrou. A chegada cancelada fica riscada no histórico, com quem cancelou, quando e por quê, sai do saldo e a alteração vai para a auditoria.
 
 O saldo não fica guardado no banco: o servidor soma as chegadas e desconta os abastecimentos com `tank: true` que não foram cancelados (`lib/tank.ts`). Abastecimentos lançados antes desta função não têm `fuelId` nem `tank` e ficam fora da conta. Como o colaborador só recebe os próprios abastecimentos, o saldo vem calculado pelo servidor em cada combustível (`tankLiters`). Se um abastecimento deixar o tanque negativo, ele é gravado mesmo assim, o comprovante avisa e o cartão do combustível fica em destaque.
 

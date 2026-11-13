@@ -593,7 +593,7 @@ export default function Dashboard() {
         {toolbar}
 
         {page === 'workshop' && <Workshop data={data} onRefresh={() => load(true, true)} canDelete />}
-        {page === 'tank' && <Tank data={data} onRefresh={() => load(true, true)} />}
+        {page === 'tank' && <Tank data={data} user={user} onRefresh={() => load(true, true)} />}
 
         {page === 'overview' && <>
           <Reveal>{kpis}</Reveal>

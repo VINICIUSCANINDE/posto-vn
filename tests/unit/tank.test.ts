@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { arrivalLiters, tankBalance, tankBalances } from '../../lib/tank.ts';
+import { arrivalLiters, parseLiters, tankBalance, tankBalances } from '../../lib/tank.ts';
 
 test('saldo soma as chegadas do combustível e desconta os abastecimentos do tanque', () => {
   const rows = [
@@ -66,4 +66,40 @@ test('litros de chegada aceitam até três casas, acima de zero e até 100.000',
 
 test('litros de chegada inválidos são recusados', () => {
   for (const v of [0, -1, 100000.001, 1.0005, 'abc', '', null, undefined, Infinity]) assert.equal(arrivalLiters(v), null, String(v));
+});
+
+test('chegada cancelada sai do saldo', () => {
+  const rows = [
+    { kind: 'fuel_in', fuelId: 'diesel', liters: 5000 },
+    { kind: 'fuel_in', fuelId: 'diesel', liters: 5, canceled: true },
+    { kind: 'fuel_in', fuelId: 'diesel', liters: 5000, canceled: true },
+    { kind: 'fill', fuelId: 'diesel', tank: true, liters: 1000 },
+  ];
+  assert.equal(tankBalance(rows, 'diesel'), 4000);
+});
+
+test('litros digitados no costume brasileiro: ponto separa milhar, vírgula separa decimal', () => {
+  assert.equal(parseLiters('5.000'), 5000);
+  assert.equal(parseLiters('5000'), 5000);
+  assert.equal(parseLiters('12.500,75'), 12500.75);
+  assert.equal(parseLiters('1.000.000'), 1000000);
+  assert.equal(parseLiters('12,5'), 12.5);
+  assert.equal(parseLiters('0,001'), 0.001);
+  assert.equal(parseLiters(' 5.000 '), 5000);
+});
+
+test('ponto seguido de uma ou duas casas, ou depois de zero, continua sendo decimal', () => {
+  assert.equal(parseLiters('12.5'), 12.5);
+  assert.equal(parseLiters('12.25'), 12.25);
+  assert.equal(parseLiters('0.500'), 0.5);
+});
+
+test('litros ilegíveis viram null', () => {
+  for (const v of ['', '  ', 'abc', '1.5.3', '5.0000', '1,2,3', '-5', '5.000,', ',5.000']) assert.equal(parseLiters(v), null, v);
+});
+
+test('a chegada aceita o texto digitado e lê 5.000 como cinco mil', () => {
+  assert.equal(arrivalLiters('5.000'), 5000);
+  assert.equal(arrivalLiters(5000), 5000);
+  assert.equal(arrivalLiters('100.001'), null);
 });

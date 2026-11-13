@@ -380,7 +380,7 @@ export default function Attendant() {
             <header className="page-header">
               <div><h1>Tanque</h1><p>Saldo do tanque da garagem por combustível e chegadas registradas</p></div>
             </header>
-            <Tank data={data} onRefresh={() => load(true)} />
+            <Tank data={data} user={user} onRefresh={() => load(true)} />
           </>
         )}
 
